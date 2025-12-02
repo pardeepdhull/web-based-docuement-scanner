@@ -68,9 +68,19 @@ const DocuScanApp = (function() {
         progressFill: document.getElementById('progress-fill'),
         progressStatus: document.getElementById('progress-status'),
         
+        // Confirmation Modal Elements
+        confirmModal: document.getElementById('confirm-modal'),
+        confirmTitle: document.getElementById('confirm-title'),
+        confirmMessage: document.getElementById('confirm-message'),
+        confirmCancelBtn: document.getElementById('confirm-cancel-btn'),
+        confirmOkBtn: document.getElementById('confirm-ok-btn'),
+        
         // Toast Container
         toastContainer: document.getElementById('toast-container')
     };
+
+    // Confirmation callback
+    let confirmCallback = null;
 
     /**
      * Initialize the application
@@ -124,15 +134,29 @@ const DocuScanApp = (function() {
             elements.saveTextBtn.disabled = false;
         });
 
+        // Confirmation Modal
+        elements.confirmCancelBtn.addEventListener('click', hideConfirm);
+        elements.confirmOkBtn.addEventListener('click', () => {
+            if (confirmCallback) {
+                confirmCallback();
+            }
+            hideConfirm();
+        });
+
         // Close modals on outside click
         elements.viewerModal.addEventListener('click', (e) => {
             if (e.target === elements.viewerModal) closeViewer();
+        });
+        elements.confirmModal.addEventListener('click', (e) => {
+            if (e.target === elements.confirmModal) hideConfirm();
         });
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                if (!elements.viewerModal.classList.contains('hidden')) {
+                if (!elements.confirmModal.classList.contains('hidden')) {
+                    hideConfirm();
+                } else if (!elements.viewerModal.classList.contains('hidden')) {
                     closeViewer();
                 } else if (!elements.cameraContainer.classList.contains('hidden')) {
                     stopCamera();
@@ -624,21 +648,24 @@ const DocuScanApp = (function() {
     /**
      * Delete current document
      */
-    async function deleteDocument() {
+    function deleteDocument() {
         if (!currentDocumentId) return;
         
-        const confirmed = confirm('Are you sure you want to delete this document? This action cannot be undone.');
-        if (!confirmed) return;
-        
-        try {
-            await DocuDB.deleteDocument(currentDocumentId);
-            closeViewer();
-            loadDocuments();
-            showToast('Document deleted successfully', 'success');
-        } catch (error) {
-            console.error('Delete error:', error);
-            showToast('Failed to delete document', 'error');
-        }
+        showConfirm(
+            'Delete Document',
+            'Are you sure you want to delete this document? This action cannot be undone.',
+            async () => {
+                try {
+                    await DocuDB.deleteDocument(currentDocumentId);
+                    closeViewer();
+                    loadDocuments();
+                    showToast('Document deleted successfully', 'success');
+                } catch (error) {
+                    console.error('Delete error:', error);
+                    showToast('Failed to delete document', 'error');
+                }
+            }
+        );
     }
 
     /**
@@ -714,6 +741,27 @@ const DocuScanApp = (function() {
      */
     function hideProcessing() {
         elements.processingModal.classList.add('hidden');
+    }
+
+    /**
+     * Show confirmation modal
+     * @param {string} title - Modal title
+     * @param {string} message - Confirmation message
+     * @param {Function} onConfirm - Callback when confirmed
+     */
+    function showConfirm(title, message, onConfirm) {
+        elements.confirmTitle.textContent = title;
+        elements.confirmMessage.textContent = message;
+        confirmCallback = onConfirm;
+        elements.confirmModal.classList.remove('hidden');
+    }
+
+    /**
+     * Hide confirmation modal
+     */
+    function hideConfirm() {
+        elements.confirmModal.classList.add('hidden');
+        confirmCallback = null;
     }
 
     /**

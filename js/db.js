@@ -52,11 +52,12 @@ const DocuDB = (function() {
     }
 
     /**
-     * Generate a unique ID for documents
+     * Generate a unique ID for documents using cryptographically secure random values
      * @returns {string}
      */
     function generateId() {
-        return 'doc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+        const randomPart = crypto.getRandomValues(new Uint32Array(2));
+        return 'doc_' + Date.now() + '_' + randomPart[0].toString(36) + randomPart[1].toString(36);
     }
 
     /**

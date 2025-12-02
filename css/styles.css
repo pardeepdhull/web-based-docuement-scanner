@@ -761,6 +761,38 @@ body {
     color: var(--text-secondary);
 }
 
+/* Confirmation Modal */
+.confirm-modal-content {
+    width: 400px;
+    padding: 2rem;
+    text-align: center;
+}
+
+.confirm-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.confirm-modal-content h3 {
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.confirm-modal-content p {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+}
+
+.confirm-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.confirm-actions .btn {
+    min-width: 100px;
+}
+
 /* Toast Notifications */
 .toast-container {
     position: fixed;
