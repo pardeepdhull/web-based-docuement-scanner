@@ -380,8 +380,9 @@ const DocuScanApp = (function() {
         stopCamera();
         closePreview();
         
-        // Set default title
-        elements.textPageNameInput.value = `Text Page ${new Date().toLocaleDateString()}`;
+        // Set default title using ISO date format for consistency
+        const dateStr = new Date().toISOString().split('T')[0];
+        elements.textPageNameInput.value = `Text Page ${dateStr}`;
         elements.textPageContentInput.value = '';
         
         // Show text editor
@@ -557,10 +558,11 @@ const DocuScanApp = (function() {
             const docTypeClass = isTextPage ? 'text-page' : 'scanned-document';
             
             // For text pages, show a text preview thumbnail; for scanned docs, show image
+            const textContent = doc.extractedText || '';
             const thumbnailHtml = isTextPage 
                 ? `<div class="text-page-thumbnail">
                        <span class="text-icon">📄</span>
-                       <span class="text-preview">${escapeHtml((doc.extractedText || '').substring(0, 100))}${(doc.extractedText || '').length > 100 ? '...' : ''}</span>
+                       <span class="text-preview">${escapeHtml(textContent.substring(0, 100))}${textContent.length > 100 ? '...' : ''}</span>
                    </div>`
                 : `<img class="document-thumbnail" src="${doc.imageData}" alt="${escapeHtml(doc.name)}" loading="lazy">`;
             
@@ -640,9 +642,10 @@ const DocuScanApp = (function() {
             const isTextPage = doc.type === 'text-page';
             
             // Set viewer content
+            const fallbackText = 'No text content';
             elements.viewerTitle.textContent = doc.name;
-            elements.textContent.textContent = doc.extractedText || 'No text content';
-            elements.splitTextContent.textContent = doc.extractedText || 'No text content';
+            elements.textContent.textContent = doc.extractedText || fallbackText;
+            elements.splitTextContent.textContent = doc.extractedText || fallbackText;
             
             // Handle text pages vs scanned documents differently
             if (isTextPage) {
