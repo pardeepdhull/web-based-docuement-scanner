@@ -36,6 +36,15 @@ const DocuScanApp = (function() {
         retakeBtn: document.getElementById('retake-btn'),
         saveScanBtn: document.getElementById('save-scan-btn'),
         
+        // Text Editor Elements
+        createTextBtn: document.getElementById('create-text-btn'),
+        textEditorContainer: document.getElementById('text-editor-container'),
+        closeTextEditorBtn: document.getElementById('close-text-editor-btn'),
+        textPageNameInput: document.getElementById('text-page-name'),
+        textPageContentInput: document.getElementById('text-page-content'),
+        cancelTextPageBtn: document.getElementById('cancel-text-page-btn'),
+        saveTextPageBtn: document.getElementById('save-text-page-btn'),
+        
         // Documents View Elements
         searchInput: document.getElementById('search-input'),
         sortSelect: document.getElementById('sort-select'),
@@ -114,6 +123,12 @@ const DocuScanApp = (function() {
         elements.retakeBtn.addEventListener('click', retake);
         elements.saveScanBtn.addEventListener('click', saveDocument);
 
+        // Text Editor
+        elements.createTextBtn.addEventListener('click', showTextEditor);
+        elements.closeTextEditorBtn.addEventListener('click', closeTextEditor);
+        elements.cancelTextPageBtn.addEventListener('click', closeTextEditor);
+        elements.saveTextPageBtn.addEventListener('click', saveTextPage);
+
         // Documents View
         elements.searchInput.addEventListener('input', debounce(filterDocuments, 300));
         elements.sortSelect.addEventListener('change', sortDocuments);
@@ -162,6 +177,8 @@ const DocuScanApp = (function() {
                     stopCamera();
                 } else if (!elements.previewContainer.classList.contains('hidden')) {
                     closePreview();
+                } else if (!elements.textEditorContainer.classList.contains('hidden')) {
+                    closeTextEditor();
                 }
             }
         });
@@ -187,6 +204,7 @@ const DocuScanApp = (function() {
         if (view !== 'scan') {
             stopCamera();
             closePreview();
+            closeTextEditor();
         }
         
         // Reload documents when switching to documents view
@@ -355,6 +373,68 @@ const DocuScanApp = (function() {
     }
 
     /**
+     * Show text editor for creating text pages
+     */
+    function showTextEditor() {
+        // Close other containers if open
+        stopCamera();
+        closePreview();
+        
+        // Set default title using ISO date format for consistency
+        const dateStr = new Date().toISOString().split('T')[0];
+        elements.textPageNameInput.value = `Text Page ${dateStr}`;
+        elements.textPageContentInput.value = '';
+        
+        // Show text editor
+        elements.textEditorContainer.classList.remove('hidden');
+        elements.textPageContentInput.focus();
+    }
+
+    /**
+     * Close text editor
+     */
+    function closeTextEditor() {
+        elements.textEditorContainer.classList.add('hidden');
+        elements.textPageNameInput.value = '';
+        elements.textPageContentInput.value = '';
+    }
+
+    /**
+     * Save text page
+     */
+    async function saveTextPage() {
+        const name = elements.textPageNameInput.value.trim() || 'Untitled Text Page';
+        const content = elements.textPageContentInput.value.trim();
+        
+        // Validation: prevent saving empty text pages
+        if (!content) {
+            showToast('Please enter some content for the text page', 'error');
+            elements.textPageContentInput.focus();
+            return;
+        }
+        
+        try {
+            // Save to database
+            await DocuDB.addDocument({
+                name,
+                imageData: null,
+                extractedText: content,
+                processed: true,
+                type: 'text-page'
+            });
+            
+            closeTextEditor();
+            showToast('Text page saved successfully!', 'success');
+            
+            // Switch to documents view
+            switchView('documents');
+        } catch (error) {
+            console.error('Save error:', error);
+            showToast('Failed to save text page: ' + error.message, 'error');
+        }
+    }
+
+    /**
      * Save document and process OCR
      */
     async function saveDocument() {
@@ -378,7 +458,8 @@ const DocuScanApp = (function() {
                 name,
                 imageData,
                 extractedText,
-                processed: true
+                processed: true,
+                type: 'scanned-document'
             });
             
             hideProcessing();
@@ -470,18 +551,37 @@ const DocuScanApp = (function() {
             return;
         }
         
-        grid.innerHTML = filteredDocs.map(doc => `
-            <div class="document-card" data-id="${doc.id}">
-                <img class="document-thumbnail" src="${doc.imageData}" alt="${escapeHtml(doc.name)}" loading="lazy">
-                <div class="document-info">
-                    <div class="document-name" title="${escapeHtml(doc.name)}">${escapeHtml(doc.name)}</div>
-                    <div class="document-date">${formatDate(doc.createdAt)}</div>
-                    <span class="document-status ${doc.processed ? 'processed' : 'pending'}">
-                        ${doc.processed ? '✓ Processed' : '⏳ Pending'}
-                    </span>
+        grid.innerHTML = filteredDocs.map(doc => {
+            const isTextPage = doc.type === 'text-page';
+            const docTypeIcon = isTextPage ? '📝' : '📷';
+            const docTypeLabel = isTextPage ? 'Text Page' : 'Scanned';
+            const docTypeClass = isTextPage ? 'text-page' : 'scanned-document';
+            
+            // For text pages, show a text preview thumbnail; for scanned docs, show image
+            const textContent = doc.extractedText || '';
+            const thumbnailHtml = isTextPage 
+                ? `<div class="text-page-thumbnail">
+                       <span class="text-icon">📄</span>
+                       <span class="text-preview">${escapeHtml(textContent.substring(0, 100))}${textContent.length > 100 ? '...' : ''}</span>
+                   </div>`
+                : `<img class="document-thumbnail" src="${doc.imageData}" alt="${escapeHtml(doc.name)}" loading="lazy">`;
+            
+            return `
+                <div class="document-card" data-id="${doc.id}">
+                    ${thumbnailHtml}
+                    <div class="document-info">
+                        <div class="document-name" title="${escapeHtml(doc.name)}">${escapeHtml(doc.name)}</div>
+                        <div class="document-date">${formatDate(doc.createdAt)}</div>
+                        <span class="document-type-badge ${docTypeClass}">
+                            ${docTypeIcon} ${docTypeLabel}
+                        </span>
+                        <span class="document-status ${doc.processed ? 'processed' : 'pending'}">
+                            ${doc.processed ? '✓ Processed' : '⏳ Pending'}
+                        </span>
+                    </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
         
         // Add click handlers
         grid.querySelectorAll('.document-card').forEach(card => {
@@ -539,13 +639,50 @@ const DocuScanApp = (function() {
             }
             
             currentDocumentId = docId;
+            const isTextPage = doc.type === 'text-page';
             
             // Set viewer content
+            const fallbackText = 'No text content';
             elements.viewerTitle.textContent = doc.name;
-            elements.viewerImage.src = doc.imageData;
-            elements.splitImage.src = doc.imageData;
-            elements.textContent.textContent = doc.extractedText || 'No text extracted';
-            elements.splitTextContent.textContent = doc.extractedText || 'No text extracted';
+            elements.textContent.textContent = doc.extractedText || fallbackText;
+            elements.splitTextContent.textContent = doc.extractedText || fallbackText;
+            
+            // Handle text pages vs scanned documents differently
+            if (isTextPage) {
+                // For text pages: hide image-related elements, show text tab
+                elements.viewerImage.src = '';
+                elements.splitImage.src = '';
+                
+                // Hide tabs that don't apply to text pages
+                elements.tabBtns.forEach(btn => {
+                    if (btn.dataset.tab === 'image' || btn.dataset.tab === 'split') {
+                        btn.style.display = 'none';
+                    } else {
+                        btn.style.display = '';
+                    }
+                });
+                
+                // Hide reprocess button for text pages
+                elements.reprocessBtn.style.display = 'none';
+                
+                // Switch to text tab
+                switchTab('text');
+            } else {
+                // For scanned documents: show all tabs
+                elements.viewerImage.src = doc.imageData;
+                elements.splitImage.src = doc.imageData;
+                
+                // Show all tabs
+                elements.tabBtns.forEach(btn => {
+                    btn.style.display = '';
+                });
+                
+                // Show reprocess button
+                elements.reprocessBtn.style.display = '';
+                
+                // Switch to image tab
+                switchTab('image');
+            }
             
             // Reset edit state
             isEditing = false;
@@ -555,9 +692,6 @@ const DocuScanApp = (function() {
             
             // Show modal
             elements.viewerModal.classList.remove('hidden');
-            
-            // Reset to image tab
-            switchTab('image');
         } catch (error) {
             console.error('Viewer error:', error);
             showToast('Failed to open document', 'error');
@@ -677,6 +811,12 @@ const DocuScanApp = (function() {
         try {
             const doc = await DocuDB.getDocument(currentDocumentId);
             if (!doc) return;
+            
+            // Only allow reprocessing for scanned documents
+            if (doc.type === 'text-page') {
+                showToast('OCR reprocessing is not available for text pages', 'warning');
+                return;
+            }
             
             closeViewer();
             showProcessing('Re-processing OCR...');
