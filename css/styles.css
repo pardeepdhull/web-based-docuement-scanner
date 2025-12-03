@@ -583,6 +583,31 @@ body {
     color: var(--secondary-color);
 }
 
+/* Search Match Indicator */
+.match-indicator {
+    display: block;
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    margin-top: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.match-indicator.match-title {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning-color);
+}
+
+.match-indicator.match-content {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success-color);
+}
+
+.match-indicator.match-both {
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary-color);
+}
+
 /* Text Page Thumbnail Placeholder */
 .text-page-thumbnail {
     width: 100%;

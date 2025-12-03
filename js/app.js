@@ -403,8 +403,15 @@ const DocuScanApp = (function() {
      * Save text page
      */
     async function saveTextPage() {
-        const name = elements.textPageNameInput.value.trim() || 'Untitled Text Page';
+        const name = elements.textPageNameInput.value.trim();
         const content = elements.textPageContentInput.value.trim();
+        
+        // Validation: prevent saving with empty title
+        if (!name) {
+            showToast('Please enter a title for the text page', 'error');
+            elements.textPageNameInput.focus();
+            return;
+        }
         
         // Validation: prevent saving empty text pages
         if (!content) {
@@ -557,6 +564,21 @@ const DocuScanApp = (function() {
             const docTypeLabel = isTextPage ? 'Text Page' : 'Scanned';
             const docTypeClass = isTextPage ? 'text-page' : 'scanned-document';
             
+            // Determine match type for search results
+            let matchIndicator = '';
+            if (searchQuery) {
+                const titleMatch = doc.name.toLowerCase().includes(searchQuery);
+                const contentMatch = doc.extractedText && doc.extractedText.toLowerCase().includes(searchQuery);
+                
+                if (titleMatch && contentMatch) {
+                    matchIndicator = '<span class="match-indicator match-both">📌 Matches in title & content</span>';
+                } else if (titleMatch) {
+                    matchIndicator = '<span class="match-indicator match-title">📌 Matches in title</span>';
+                } else if (contentMatch) {
+                    matchIndicator = '<span class="match-indicator match-content">📌 Matches in content</span>';
+                }
+            }
+            
             // For text pages, show a text preview thumbnail; for scanned docs, show image
             const textContent = doc.extractedText || '';
             const thumbnailHtml = isTextPage 
@@ -572,6 +594,7 @@ const DocuScanApp = (function() {
                     <div class="document-info">
                         <div class="document-name" title="${escapeHtml(doc.name)}">${escapeHtml(doc.name)}</div>
                         <div class="document-date">${formatDate(doc.createdAt)}</div>
+                        ${matchIndicator}
                         <span class="document-type-badge ${docTypeClass}">
                             ${docTypeIcon} ${docTypeLabel}
                         </span>
