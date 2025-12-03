@@ -50,6 +50,13 @@
                     <input type="file" id="file-input" accept="image/*,.pdf" hidden>
                     <button class="btn btn-secondary" id="upload-btn">Choose File</button>
                 </div>
+
+                <div class="option-card" id="text-page-option">
+                    <div class="option-icon">📝</div>
+                    <h3>Create Text Page</h3>
+                    <p>Create a new text document manually</p>
+                    <button class="btn btn-primary" id="create-text-btn">Create Text Page</button>
+                </div>
             </div>
 
             <!-- Camera Container -->
@@ -88,6 +95,30 @@
                         <button class="btn btn-primary" id="save-scan-btn">
                             <span class="btn-loader hidden"></span>
                             <span class="btn-text">Save &amp; Process OCR</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Text Page Editor -->
+            <div id="text-editor-container" class="text-editor-container hidden">
+                <div class="text-editor-header">
+                    <h3>Create Text Page</h3>
+                    <button class="btn-icon" id="close-text-editor-btn" title="Cancel">✕</button>
+                </div>
+                <div class="text-editor-form">
+                    <div class="form-group">
+                        <label for="text-page-name">Page Title</label>
+                        <input type="text" id="text-page-name" placeholder="Enter page title" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="text-page-content">Content</label>
+                        <textarea id="text-page-content" class="form-textarea" placeholder="Type or paste your text content here..." rows="12"></textarea>
+                    </div>
+                    <div class="text-editor-actions">
+                        <button class="btn btn-secondary" id="cancel-text-page-btn">Cancel</button>
+                        <button class="btn btn-primary" id="save-text-page-btn">
+                            <span class="btn-text">Save Text Page</span>
                         </button>
                     </div>
                 </div>

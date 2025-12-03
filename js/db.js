@@ -75,9 +75,10 @@ const DocuDB = (function() {
             const doc = {
                 id: generateId(),
                 name: document.name || 'Untitled Document',
-                imageData: document.imageData,
+                imageData: document.imageData || null,
                 extractedText: document.extractedText || '',
                 processed: document.processed || false,
+                type: document.type || 'scanned-document', // 'scanned-document' or 'text-page'
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             };
