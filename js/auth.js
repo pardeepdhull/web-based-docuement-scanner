@@ -83,7 +83,7 @@ const DocuAuth = (function() {
         }
 
         const users = getUsers();
-        const user = users.find(u => u.username.toLowerCase() === username.toLowerCase().trim());
+        const user = users.find(u => u.username.toLowerCase().trim() === username.toLowerCase().trim());
 
         if (!user) {
             return { success: false, message: 'Invalid username or password' };

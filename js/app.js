@@ -173,7 +173,10 @@ const DocuScanApp = (function() {
         
         // Disable button during login
         elements.loginBtn.disabled = true;
-        elements.loginBtn.querySelector('.btn-text').textContent = 'Logging in...';
+        const btnTextElement = elements.loginBtn.querySelector('.btn-text');
+        if (btnTextElement) {
+            btnTextElement.textContent = 'Logging in...';
+        }
         
         try {
             const result = await DocuAuth.login(username, password);
@@ -190,7 +193,9 @@ const DocuScanApp = (function() {
             elements.loginError.classList.remove('hidden');
         } finally {
             elements.loginBtn.disabled = false;
-            elements.loginBtn.querySelector('.btn-text').textContent = 'Log In';
+            if (btnTextElement) {
+                btnTextElement.textContent = 'Log In';
+            }
         }
     }
 
