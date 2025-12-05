@@ -50,6 +50,121 @@ body {
     flex-direction: column;
 }
 
+/* =====================================================
+   LOGIN SCREEN STYLES
+   ===================================================== */
+
+.login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--primary-color) 0%, #1e40af 100%);
+    padding: 1rem;
+}
+
+.login-screen.hidden {
+    display: none;
+}
+
+.login-container {
+    background: var(--card-background);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 400px;
+    animation: loginSlideIn 0.4s ease;
+}
+
+@keyframes loginSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.login-logo {
+    font-size: 4rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.login-header h1 {
+    font-size: 1.75rem;
+    color: var(--primary-color);
+    margin-bottom: 0.25rem;
+}
+
+.login-header p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.login-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--danger-color);
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1rem;
+    color: var(--danger-color);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.login-error.hidden {
+    display: none;
+}
+
+.btn-block {
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+.login-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.login-footer p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.login-footer strong {
+    color: var(--text-primary);
+}
+
+/* =====================================================
+   APP CONTAINER STYLES
+   ===================================================== */
+
+.app-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.app-container.hidden {
+    display: none;
+}
+
 /* Navigation */
 .navbar {
     background: var(--card-background);
@@ -110,6 +225,29 @@ body {
 
 .nav-icon {
     font-size: 1.1rem;
+}
+
+/* User Navigation Area */
+.nav-user {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-greeting {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+#current-username {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+#logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
 }
 
 /* Main Content */
@@ -1066,6 +1204,28 @@ body {
     .tab-btn {
         white-space: nowrap;
     }
+
+    /* Navigation User Area Responsive */
+    .user-greeting {
+        display: none;
+    }
+
+    .nav-user {
+        gap: 0.5rem;
+    }
+
+    /* Login Screen Responsive */
+    .login-container {
+        padding: 1.5rem;
+    }
+
+    .login-logo {
+        font-size: 3rem;
+    }
+
+    .login-header h1 {
+        font-size: 1.5rem;
+    }
 }
 
 @media (max-width: 480px) {
@@ -1087,5 +1247,14 @@ body {
 
     .text-toolbar {
         justify-content: center;
+    }
+
+    /* Logout Button Responsive */
+    #logout-btn .nav-text {
+        display: none;
+    }
+
+    .login-footer p {
+        font-size: 0.8rem;
     }
 }

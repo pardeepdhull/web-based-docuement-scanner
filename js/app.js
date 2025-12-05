@@ -13,6 +13,17 @@ const DocuScanApp = (function() {
 
     // DOM Elements
     const elements = {
+        // Authentication Elements
+        loginScreen: document.getElementById('login-screen'),
+        appContainer: document.getElementById('app-container'),
+        loginForm: document.getElementById('login-form'),
+        loginUsername: document.getElementById('login-username'),
+        loginPassword: document.getElementById('login-password'),
+        loginError: document.getElementById('login-error'),
+        loginBtn: document.getElementById('login-btn'),
+        logoutBtn: document.getElementById('logout-btn'),
+        currentUsername: document.getElementById('current-username'),
+        
         // Navigation
         navBtns: document.querySelectorAll('.nav-btn'),
         
@@ -95,8 +106,11 @@ const DocuScanApp = (function() {
      * Initialize the application
      */
     function init() {
+        // Check authentication status first
+        checkAuthAndShowScreen();
+        
+        // Setup event listeners
         setupEventListeners();
-        loadDocuments();
         
         // Set PDF.js worker
         if (typeof pdfjsLib !== 'undefined') {
@@ -105,9 +119,97 @@ const DocuScanApp = (function() {
     }
 
     /**
+     * Check authentication status and show appropriate screen
+     */
+    function checkAuthAndShowScreen() {
+        if (DocuAuth.isAuthenticated()) {
+            showApp();
+        } else {
+            showLogin();
+        }
+    }
+
+    /**
+     * Show the login screen
+     */
+    function showLogin() {
+        elements.loginScreen.classList.remove('hidden');
+        elements.appContainer.classList.add('hidden');
+        // Clear form
+        elements.loginUsername.value = '';
+        elements.loginPassword.value = '';
+        elements.loginError.classList.add('hidden');
+        elements.loginError.textContent = '';
+    }
+
+    /**
+     * Show the main application
+     */
+    function showApp() {
+        elements.loginScreen.classList.add('hidden');
+        elements.appContainer.classList.remove('hidden');
+        // Display current username
+        const username = DocuAuth.getCurrentUsername();
+        if (username && elements.currentUsername) {
+            elements.currentUsername.textContent = username;
+        }
+        // Load documents when app is shown
+        loadDocuments();
+    }
+
+    /**
+     * Handle login form submission
+     * @param {Event} event - Form submit event
+     */
+    async function handleLogin(event) {
+        event.preventDefault();
+        
+        const username = elements.loginUsername.value;
+        const password = elements.loginPassword.value;
+        
+        // Clear previous error
+        elements.loginError.classList.add('hidden');
+        elements.loginError.textContent = '';
+        
+        // Disable button during login
+        elements.loginBtn.disabled = true;
+        elements.loginBtn.querySelector('.btn-text').textContent = 'Logging in...';
+        
+        try {
+            const result = await DocuAuth.login(username, password);
+            
+            if (result.success) {
+                showApp();
+            } else {
+                elements.loginError.textContent = result.message;
+                elements.loginError.classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            elements.loginError.textContent = 'An error occurred during login';
+            elements.loginError.classList.remove('hidden');
+        } finally {
+            elements.loginBtn.disabled = false;
+            elements.loginBtn.querySelector('.btn-text').textContent = 'Log In';
+        }
+    }
+
+    /**
+     * Handle logout
+     */
+    function handleLogout() {
+        DocuAuth.logout();
+        showLogin();
+    }
+
+    /**
      * Setup all event listeners
      */
     function setupEventListeners() {
+        // Authentication
+        elements.loginForm.addEventListener('submit', handleLogin);
+        elements.logoutBtn.addEventListener('click', handleLogout);
+        
         // Navigation
         elements.navBtns.forEach(btn => {
             btn.addEventListener('click', () => switchView(btn.dataset.view));
