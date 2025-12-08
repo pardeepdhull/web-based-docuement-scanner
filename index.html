@@ -31,7 +31,40 @@
                 </button>
             </form>
             <div class="login-footer">
-                <p>Demo credentials: <strong>admin</strong> / <strong>password123</strong></p>
+                <p>Demo credentials: <strong>admin</strong> / <strong>admin123</strong></p>
+                <p class="auth-switch">Don't have an account? <a href="#" id="show-register-link">Sign Up</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registration Screen -->
+    <div id="register-screen" class="login-screen hidden">
+        <div class="login-container">
+            <div class="login-header">
+                <span class="login-logo">📄</span>
+                <h1>DocuScan</h1>
+                <p>Create Your Account</p>
+            </div>
+            <form id="register-form" class="login-form">
+                <div class="form-group">
+                    <label for="register-username">Username</label>
+                    <input type="text" id="register-username" class="form-input" placeholder="Choose a username" autocomplete="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Password</label>
+                    <input type="password" id="register-password" class="form-input" placeholder="Choose a password" autocomplete="new-password" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-password-confirm">Confirm Password</label>
+                    <input type="password" id="register-password-confirm" class="form-input" placeholder="Confirm your password" autocomplete="new-password" required>
+                </div>
+                <div id="register-error" class="login-error hidden"></div>
+                <button type="submit" class="btn btn-primary btn-block" id="register-btn">
+                    <span class="btn-text">Sign Up</span>
+                </button>
+            </form>
+            <div class="login-footer">
+                <p class="auth-switch">Already have an account? <a href="#" id="show-login-link">Log In</a></p>
             </div>
         </div>
     </div>
@@ -52,6 +85,10 @@
                 <button class="nav-btn" data-view="documents">
                     <span class="nav-icon">📁</span>
                     <span class="nav-text">List of documents</span>
+                </button>
+                <button class="nav-btn hidden" id="user-management-nav-btn" data-view="users">
+                    <span class="nav-icon">👥</span>
+                    <span class="nav-text">User Management</span>
                 </button>
             </div>
             <div class="nav-user">
@@ -193,6 +230,26 @@
                 <h3>No Documents Yet</h3>
                 <p>Start by scanning or uploading your first document</p>
                 <button class="btn btn-primary" id="go-scan-btn">Scan Document</button>
+            </div>
+        </section>
+
+        <!-- User Management View (Admin Only) -->
+        <section id="users-view" class="view">
+            <div class="view-header">
+                <h1>User Management</h1>
+                <p>Manage user accounts and permissions</p>
+            </div>
+            
+            <div class="users-container">
+                <div id="users-list" class="users-list">
+                    <!-- Users will be dynamically inserted here -->
+                </div>
+            </div>
+
+            <div id="no-users" class="no-documents hidden">
+                <div class="empty-icon">👥</div>
+                <h3>No Other Users</h3>
+                <p>You are currently the only user in the system</p>
             </div>
         </section>
 

@@ -15,14 +15,24 @@ const DocuScanApp = (function() {
     const elements = {
         // Authentication Elements
         loginScreen: document.getElementById('login-screen'),
+        registerScreen: document.getElementById('register-screen'),
         appContainer: document.getElementById('app-container'),
         loginForm: document.getElementById('login-form'),
         loginUsername: document.getElementById('login-username'),
         loginPassword: document.getElementById('login-password'),
         loginError: document.getElementById('login-error'),
         loginBtn: document.getElementById('login-btn'),
+        registerForm: document.getElementById('register-form'),
+        registerUsername: document.getElementById('register-username'),
+        registerPassword: document.getElementById('register-password'),
+        registerPasswordConfirm: document.getElementById('register-password-confirm'),
+        registerError: document.getElementById('register-error'),
+        registerBtn: document.getElementById('register-btn'),
+        showRegisterLink: document.getElementById('show-register-link'),
+        showLoginLink: document.getElementById('show-login-link'),
         logoutBtn: document.getElementById('logout-btn'),
         currentUsername: document.getElementById('current-username'),
+        userManagementNavBtn: document.getElementById('user-management-nav-btn'),
         
         // Navigation
         navBtns: document.querySelectorAll('.nav-btn'),
@@ -30,6 +40,7 @@ const DocuScanApp = (function() {
         // Views
         scanView: document.getElementById('scan-view'),
         documentsView: document.getElementById('documents-view'),
+        usersView: document.getElementById('users-view'),
         
         // Scan View Elements
         startCameraBtn: document.getElementById('start-camera-btn'),
@@ -62,6 +73,10 @@ const DocuScanApp = (function() {
         documentsGrid: document.getElementById('documents-grid'),
         noDocuments: document.getElementById('no-documents'),
         goScanBtn: document.getElementById('go-scan-btn'),
+        
+        // User Management Elements
+        usersList: document.getElementById('users-list'),
+        noUsers: document.getElementById('no-users'),
         
         // Viewer Modal Elements
         viewerModal: document.getElementById('viewer-modal'),
@@ -134,6 +149,7 @@ const DocuScanApp = (function() {
      */
     function showLogin() {
         elements.loginScreen.classList.remove('hidden');
+        elements.registerScreen.classList.add('hidden');
         elements.appContainer.classList.add('hidden');
         // Clear form
         elements.loginUsername.value = '';
@@ -143,15 +159,39 @@ const DocuScanApp = (function() {
     }
 
     /**
+     * Show the registration screen
+     */
+    function showRegister() {
+        elements.loginScreen.classList.add('hidden');
+        elements.registerScreen.classList.remove('hidden');
+        elements.appContainer.classList.add('hidden');
+        // Clear form
+        elements.registerUsername.value = '';
+        elements.registerPassword.value = '';
+        elements.registerPasswordConfirm.value = '';
+        elements.registerError.classList.add('hidden');
+        elements.registerError.textContent = '';
+    }
+
+    /**
      * Show the main application
      */
     function showApp() {
         elements.loginScreen.classList.add('hidden');
+        elements.registerScreen.classList.add('hidden');
         elements.appContainer.classList.remove('hidden');
         // Display current username
         const username = DocuAuth.getCurrentUsername();
         if (username && elements.currentUsername) {
             elements.currentUsername.textContent = username;
+        }
+        // Show/hide user management button based on admin status
+        if (elements.userManagementNavBtn) {
+            if (DocuAuth.isAdmin()) {
+                elements.userManagementNavBtn.classList.remove('hidden');
+            } else {
+                elements.userManagementNavBtn.classList.add('hidden');
+            }
         }
         // Load documents when app is shown
         loadDocuments();
@@ -208,11 +248,76 @@ const DocuScanApp = (function() {
     }
 
     /**
+     * Handle registration form submission
+     * @param {Event} event - Form submit event
+     */
+    async function handleRegister(event) {
+        event.preventDefault();
+        
+        const username = elements.registerUsername.value;
+        const password = elements.registerPassword.value;
+        const passwordConfirm = elements.registerPasswordConfirm.value;
+        
+        // Clear previous error
+        elements.registerError.classList.add('hidden');
+        elements.registerError.textContent = '';
+        
+        // Check if passwords match
+        if (password !== passwordConfirm) {
+            elements.registerError.textContent = 'Passwords do not match';
+            elements.registerError.classList.remove('hidden');
+            return;
+        }
+        
+        // Disable button during registration
+        elements.registerBtn.disabled = true;
+        const btnTextElement = elements.registerBtn.querySelector('.btn-text');
+        if (btnTextElement) {
+            btnTextElement.textContent = 'Creating account...';
+        }
+        
+        try {
+            const result = await DocuAuth.register(username, password);
+            
+            if (result.success) {
+                showToast(result.message, 'success');
+                // Auto-switch to login screen after successful registration
+                setTimeout(() => {
+                    showLogin();
+                    // Pre-fill username
+                    elements.loginUsername.value = username;
+                }, 1500);
+            } else {
+                elements.registerError.textContent = result.message;
+                elements.registerError.classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error('Registration error:', error);
+            elements.registerError.textContent = 'An error occurred during registration';
+            elements.registerError.classList.remove('hidden');
+        } finally {
+            elements.registerBtn.disabled = false;
+            if (btnTextElement) {
+                btnTextElement.textContent = 'Sign Up';
+            }
+        }
+    }
+
+    /**
      * Setup all event listeners
      */
     function setupEventListeners() {
         // Authentication
         elements.loginForm.addEventListener('submit', handleLogin);
+        elements.registerForm.addEventListener('submit', handleRegister);
+        elements.showRegisterLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showRegister();
+        });
+        elements.showLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showLogin();
+        });
         elements.logoutBtn.addEventListener('click', handleLogout);
         
         // Navigation
@@ -293,9 +398,15 @@ const DocuScanApp = (function() {
 
     /**
      * Switch between views
-     * @param {string} view - View name ('scan' or 'documents')
+     * @param {string} view - View name ('scan', 'documents', or 'users')
      */
     function switchView(view) {
+        // Check if user is trying to access admin-only view
+        if (view === 'users' && !DocuAuth.isAdmin()) {
+            showToast('You do not have permission to access this page', 'error');
+            return;
+        }
+
         currentView = view;
         
         // Update navigation
@@ -306,6 +417,9 @@ const DocuScanApp = (function() {
         // Update views
         elements.scanView.classList.toggle('active', view === 'scan');
         elements.documentsView.classList.toggle('active', view === 'documents');
+        if (elements.usersView) {
+            elements.usersView.classList.toggle('active', view === 'users');
+        }
         
         // Reset scan view state when switching away
         if (view !== 'scan') {
@@ -317,6 +431,11 @@ const DocuScanApp = (function() {
         // Reload documents when switching to documents view
         if (view === 'documents') {
             loadDocuments();
+        }
+        
+        // Load users when switching to users view
+        if (view === 'users') {
+            loadUsers();
         }
     }
 
@@ -1124,6 +1243,132 @@ const DocuScanApp = (function() {
         };
     }
 
+    /**
+     * Load all users (admin only)
+     */
+    function loadUsers() {
+        if (!DocuAuth.isAdmin()) {
+            showToast('Access denied: Admin only', 'error');
+            switchView('scan');
+            return;
+        }
+
+        const users = DocuAuth.getAllUsers();
+        const currentUsername = DocuAuth.getCurrentUsername();
+        
+        // Filter out current user
+        const otherUsers = users.filter(u => u.username !== currentUsername);
+        
+        renderUsers(otherUsers);
+    }
+
+    /**
+     * Render users list
+     * @param {Array} users - Array of user objects
+     */
+    function renderUsers(users) {
+        const list = elements.usersList;
+        
+        if (users.length === 0) {
+            list.innerHTML = '';
+            elements.noUsers.classList.remove('hidden');
+            return;
+        }
+        
+        elements.noUsers.classList.add('hidden');
+        
+        list.innerHTML = users.map(user => {
+            const statusClass = user.isActive ? 'active' : 'inactive';
+            const statusText = user.isActive ? 'Active' : 'Inactive';
+            const statusIcon = user.isActive ? '✓' : '✕';
+            const toggleText = user.isActive ? 'Deactivate' : 'Activate';
+            const roleText = user.isAdmin ? 'Admin' : 'User';
+            const roleBadge = user.isAdmin ? '<span class="role-badge admin">👑 Admin</span>' : '<span class="role-badge user">👤 User</span>';
+            
+            return `
+                <div class="user-card">
+                    <div class="user-info">
+                        <div class="user-header">
+                            <h3 class="user-name">${escapeHtml(user.username)}</h3>
+                            ${roleBadge}
+                            <span class="user-status ${statusClass}">
+                                ${statusIcon} ${statusText}
+                            </span>
+                        </div>
+                        ${user.createdAt ? `<p class="user-date">Joined: ${formatDate(user.createdAt)}</p>` : ''}
+                    </div>
+                    <div class="user-actions">
+                        <button class="btn btn-sm btn-secondary" onclick="DocuScanApp.toggleUserStatus('${escapeHtml(user.username)}', ${!user.isActive})">
+                            ${toggleText}
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="DocuScanApp.confirmDeleteUser('${escapeHtml(user.username)}')">
+                            🗑️ Delete
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    /**
+     * Toggle user active status
+     * @param {string} username - Username to toggle
+     * @param {boolean} isActive - New active status
+     */
+    function toggleUserStatus(username, isActive) {
+        if (!DocuAuth.isAdmin()) {
+            showToast('Access denied: Admin only', 'error');
+            return;
+        }
+
+        const success = DocuAuth.setUserStatus(username, isActive);
+        
+        if (success) {
+            const statusText = isActive ? 'activated' : 'deactivated';
+            showToast(`User ${username} has been ${statusText}`, 'success');
+            loadUsers();
+        } else {
+            showToast('Failed to update user status', 'error');
+        }
+    }
+
+    /**
+     * Confirm user deletion
+     * @param {string} username - Username to delete
+     */
+    function confirmDeleteUser(username) {
+        if (!DocuAuth.isAdmin()) {
+            showToast('Access denied: Admin only', 'error');
+            return;
+        }
+
+        showConfirm(
+            'Delete User',
+            `Are you sure you want to delete user "${username}"? This action cannot be undone.`,
+            () => deleteUser(username)
+        );
+    }
+
+    /**
+     * Delete a user
+     * @param {string} username - Username to delete
+     */
+    function deleteUser(username) {
+        if (!DocuAuth.isAdmin()) {
+            showToast('Access denied: Admin only', 'error');
+            return;
+        }
+
+        const success = DocuAuth.deleteUser(username);
+        
+        if (success) {
+            showToast(`User ${username} has been deleted`, 'success');
+            loadUsers();
+        } else {
+            showToast('Failed to delete user', 'error');
+        }
+    }
+
     // Initialize on DOM ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
@@ -1134,6 +1379,8 @@ const DocuScanApp = (function() {
     // Public API
     return {
         switchView,
-        loadDocuments
+        loadDocuments,
+        toggleUserStatus,
+        confirmDeleteUser
     };
 })();
