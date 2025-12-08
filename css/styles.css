@@ -1122,6 +1122,130 @@ body {
     border-top: 1px solid var(--border-color);
 }
 
+/* =====================================================
+   REGISTRATION SCREEN STYLES
+   ===================================================== */
+
+.auth-switch {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.auth-switch a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color var(--transition-fast);
+}
+
+.auth-switch a:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+/* =====================================================
+   USER MANAGEMENT STYLES
+   ===================================================== */
+
+.users-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.users-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.user-card {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    transition: box-shadow var(--transition-normal);
+}
+
+.user-card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.user-info {
+    flex: 1;
+}
+
+.user-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+}
+
+.user-name {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-md);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.role-badge.admin {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning-color);
+    border: 1px solid var(--warning-color);
+}
+
+.role-badge.user {
+    background: rgba(107, 114, 128, 0.1);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.user-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-md);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.user-status.active {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success-color);
+    border: 1px solid var(--success-color);
+}
+
+.user-status.inactive {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger-color);
+    border: 1px solid var(--danger-color);
+}
+
+.user-date {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin: 0.25rem 0 0 0;
+}
+
+.user-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
 /* Utility Classes */
 .hidden {
     display: none !important;
@@ -1256,5 +1380,20 @@ body {
 
     .login-footer p {
         font-size: 0.8rem;
+    }
+
+    /* User Management Responsive */
+    .user-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .user-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .user-actions .btn {
+        width: 100%;
     }
 }
