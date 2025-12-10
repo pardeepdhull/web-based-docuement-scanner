@@ -647,6 +647,12 @@ const DocuScanApp = (function() {
         }
         
         try {
+            const username = DocuAuth.getCurrentUsername();
+            if (!username) {
+                showToast('You must be logged in to save documents', 'error');
+                return;
+            }
+            
             // Save to database
             await DocuDB.addDocument({
                 name,
@@ -654,7 +660,7 @@ const DocuScanApp = (function() {
                 extractedText: content,
                 processed: true,
                 type: 'text-page'
-            });
+            }, username);
             
             closeTextEditor();
             showToast('Text page saved successfully!', 'success');
@@ -679,6 +685,12 @@ const DocuScanApp = (function() {
             return;
         }
         
+        const username = DocuAuth.getCurrentUsername();
+        if (!username) {
+            showToast('You must be logged in to save documents', 'error');
+            return;
+        }
+        
         // Show processing modal
         showProcessing('Processing Document...');
         
@@ -693,7 +705,7 @@ const DocuScanApp = (function() {
                 extractedText,
                 processed: true,
                 type: 'scanned-document'
-            });
+            }, username);
             
             hideProcessing();
             closePreview();
@@ -744,7 +756,14 @@ const DocuScanApp = (function() {
      */
     async function loadDocuments() {
         try {
-            documents = await DocuDB.getAllDocuments();
+            const username = DocuAuth.getCurrentUsername();
+            if (!username) {
+                documents = [];
+                renderDocuments();
+                return;
+            }
+            
+            documents = await DocuDB.getDocumentsByUser(username);
             renderDocuments();
         } catch (error) {
             console.error('Load error:', error);
