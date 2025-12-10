@@ -264,16 +264,20 @@ const DocuDB = (function() {
     }
 
     /**
-     * Search documents by name
+     * Search documents by name for a specific user
      * @param {string} query - Search query
-     * @param {string} username - Username to filter by (optional)
+     * @param {string} username - Username to filter by
      * @returns {Promise<Array>}
      */
-    async function searchDocuments(query, username = null) {
-        const allDocs = username ? await getDocumentsByUser(username) : await getAllDocuments();
+    async function searchDocuments(query, username) {
+        if (!username) {
+            return [];
+        }
+        
+        const userDocs = await getDocumentsByUser(username);
         const lowerQuery = query.toLowerCase();
         
-        return allDocs.filter(doc => 
+        return userDocs.filter(doc => 
             doc.name.toLowerCase().includes(lowerQuery) ||
             (doc.extractedText && doc.extractedText.toLowerCase().includes(lowerQuery))
         );
