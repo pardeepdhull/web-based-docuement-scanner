@@ -647,6 +647,12 @@ const DocuScanApp = (function() {
         }
         
         try {
+            const username = DocuAuth.getCurrentUsername();
+            if (!username) {
+                showToast('You must be logged in to save documents', 'error');
+                return;
+            }
+            
             // Save to database
             await DocuDB.addDocument({
                 name,
@@ -654,7 +660,7 @@ const DocuScanApp = (function() {
                 extractedText: content,
                 processed: true,
                 type: 'text-page'
-            });
+            }, username);
             
             closeTextEditor();
             showToast('Text page saved successfully!', 'success');
@@ -679,6 +685,12 @@ const DocuScanApp = (function() {
             return;
         }
         
+        const username = DocuAuth.getCurrentUsername();
+        if (!username) {
+            showToast('You must be logged in to save documents', 'error');
+            return;
+        }
+        
         // Show processing modal
         showProcessing('Processing Document...');
         
@@ -693,7 +705,7 @@ const DocuScanApp = (function() {
                 extractedText,
                 processed: true,
                 type: 'scanned-document'
-            });
+            }, username);
             
             hideProcessing();
             closePreview();
@@ -744,7 +756,14 @@ const DocuScanApp = (function() {
      */
     async function loadDocuments() {
         try {
-            documents = await DocuDB.getAllDocuments();
+            const username = DocuAuth.getCurrentUsername();
+            if (!username) {
+                documents = [];
+                renderDocuments();
+                return;
+            }
+            
+            documents = await DocuDB.getDocumentsByUser(username);
             renderDocuments();
         } catch (error) {
             console.error('Load error:', error);
@@ -884,6 +903,13 @@ const DocuScanApp = (function() {
             const doc = await DocuDB.getDocument(docId);
             if (!doc) {
                 showToast('Document not found', 'error');
+                return;
+            }
+            
+            // Security check: ensure document belongs to current user
+            const currentUser = DocuAuth.getCurrentUsername();
+            if (!currentUser || doc.username !== currentUser) {
+                showToast('You do not have permission to view this document', 'error');
                 return;
             }
             
@@ -1031,24 +1057,42 @@ const DocuScanApp = (function() {
     /**
      * Delete current document
      */
-    function deleteDocument() {
+    async function deleteDocument() {
         if (!currentDocumentId) return;
         
-        showConfirm(
-            'Delete Document',
-            'Are you sure you want to delete this document? This action cannot be undone.',
-            async () => {
-                try {
-                    await DocuDB.deleteDocument(currentDocumentId);
-                    closeViewer();
-                    loadDocuments();
-                    showToast('Document deleted successfully', 'success');
-                } catch (error) {
-                    console.error('Delete error:', error);
-                    showToast('Failed to delete document', 'error');
-                }
+        try {
+            // Security check: ensure document belongs to current user
+            const doc = await DocuDB.getDocument(currentDocumentId);
+            if (!doc) {
+                showToast('Document not found', 'error');
+                return;
             }
-        );
+            
+            const currentUser = DocuAuth.getCurrentUsername();
+            if (!currentUser || doc.username !== currentUser) {
+                showToast('You do not have permission to delete this document', 'error');
+                return;
+            }
+            
+            showConfirm(
+                'Delete Document',
+                'Are you sure you want to delete this document? This action cannot be undone.',
+                async () => {
+                    try {
+                        await DocuDB.deleteDocument(currentDocumentId);
+                        closeViewer();
+                        loadDocuments();
+                        showToast('Document deleted successfully', 'success');
+                    } catch (error) {
+                        console.error('Delete error:', error);
+                        showToast('Failed to delete document', 'error');
+                    }
+                }
+            );
+        } catch (error) {
+            console.error('Delete check error:', error);
+            showToast('Failed to verify document ownership', 'error');
+        }
     }
 
     /**
@@ -1060,6 +1104,13 @@ const DocuScanApp = (function() {
         try {
             const doc = await DocuDB.getDocument(currentDocumentId);
             if (!doc) return;
+            
+            // Security check: ensure document belongs to current user
+            const currentUser = DocuAuth.getCurrentUsername();
+            if (!currentUser || doc.username !== currentUser) {
+                showToast('You do not have permission to modify this document', 'error');
+                return;
+            }
             
             // Only allow reprocessing for scanned documents
             if (doc.type === 'text-page') {
@@ -1094,9 +1145,22 @@ const DocuScanApp = (function() {
     async function saveTextChanges() {
         if (!currentDocumentId) return;
         
-        const newText = elements.textContent.textContent;
-        
         try {
+            // Security check: ensure document belongs to current user
+            const doc = await DocuDB.getDocument(currentDocumentId);
+            if (!doc) {
+                showToast('Document not found', 'error');
+                return;
+            }
+            
+            const currentUser = DocuAuth.getCurrentUsername();
+            if (!currentUser || doc.username !== currentUser) {
+                showToast('You do not have permission to modify this document', 'error');
+                return;
+            }
+            
+            const newText = elements.textContent.textContent;
+            
             await DocuDB.updateDocument(currentDocumentId, {
                 extractedText: newText
             });

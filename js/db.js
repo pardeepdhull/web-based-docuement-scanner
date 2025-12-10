@@ -5,7 +5,7 @@
 
 const DocuDB = (function() {
     const DB_NAME = 'DocuScanDB';
-    const DB_VERSION = 1;
+    const DB_VERSION = 2;
     const STORE_NAME = 'documents';
     
     let db = null;
@@ -34,8 +34,9 @@ const DocuDB = (function() {
 
             request.onupgradeneeded = (event) => {
                 const database = event.target.result;
+                const transaction = event.target.transaction;
                 
-                // Create documents object store
+                // Create documents object store if it doesn't exist
                 if (!database.objectStoreNames.contains(STORE_NAME)) {
                     const store = database.createObjectStore(STORE_NAME, { 
                         keyPath: 'id',
@@ -46,6 +47,13 @@ const DocuDB = (function() {
                     store.createIndex('name', 'name', { unique: false });
                     store.createIndex('createdAt', 'createdAt', { unique: false });
                     store.createIndex('processed', 'processed', { unique: false });
+                    store.createIndex('username', 'username', { unique: false });
+                } else {
+                    // If store exists, check if username index needs to be added
+                    const store = transaction.objectStore(STORE_NAME);
+                    if (!store.indexNames.contains('username')) {
+                        store.createIndex('username', 'username', { unique: false });
+                    }
                 }
             };
         });
@@ -63,10 +71,15 @@ const DocuDB = (function() {
     /**
      * Add a new document to the database
      * @param {Object} document - Document object with imageData, name, etc.
+     * @param {string} username - Username of the document owner
      * @returns {Promise<string>} - Document ID
      */
-    async function addDocument(document) {
+    async function addDocument(document, username) {
         await init();
+        
+        if (!username) {
+            throw new Error('Username is required to add a document');
+        }
         
         return new Promise((resolve, reject) => {
             const transaction = db.transaction([STORE_NAME], 'readwrite');
@@ -79,6 +92,7 @@ const DocuDB = (function() {
                 extractedText: document.extractedText || '',
                 processed: document.processed || false,
                 type: document.type || 'scanned-document', // 'scanned-document' or 'text-page'
+                username: username,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             };
@@ -136,6 +150,34 @@ const DocuDB = (function() {
             
             request.onerror = () => {
                 reject(new Error('Failed to get documents'));
+            };
+        });
+    }
+
+    /**
+     * Get documents by username
+     * @param {string} username - Username to filter by
+     * @returns {Promise<Array>}
+     */
+    async function getDocumentsByUser(username) {
+        await init();
+        
+        if (!username) {
+            return [];
+        }
+        
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_NAME], 'readonly');
+            const store = transaction.objectStore(STORE_NAME);
+            const index = store.index('username');
+            const request = index.getAll(username);
+            
+            request.onsuccess = () => {
+                resolve(request.result || []);
+            };
+            
+            request.onerror = () => {
+                reject(new Error('Failed to get documents by user'));
             };
         });
     }
@@ -222,15 +264,20 @@ const DocuDB = (function() {
     }
 
     /**
-     * Search documents by name
+     * Search documents by name for a specific user
      * @param {string} query - Search query
+     * @param {string} username - Username to filter by
      * @returns {Promise<Array>}
      */
-    async function searchDocuments(query) {
-        const allDocs = await getAllDocuments();
+    async function searchDocuments(query, username) {
+        if (!username) {
+            return [];
+        }
+        
+        const userDocs = await getDocumentsByUser(username);
         const lowerQuery = query.toLowerCase();
         
-        return allDocs.filter(doc => 
+        return userDocs.filter(doc => 
             doc.name.toLowerCase().includes(lowerQuery) ||
             (doc.extractedText && doc.extractedText.toLowerCase().includes(lowerQuery))
         );
@@ -242,6 +289,7 @@ const DocuDB = (function() {
         addDocument,
         getDocument,
         getAllDocuments,
+        getDocumentsByUser,
         updateDocument,
         deleteDocument,
         clearAll,
