@@ -14,7 +14,7 @@ This document verifies that all OCR processing and search requirements from the 
 - **Flow:**
   - Camera: `captureImage()` → `showPreview()` → `saveDocument()` → `performOCR()`
   - Upload: `handleFileUpload()` → `showPreview()` → `saveDocument()` → `performOCR()`
-- **Error Handling:** If OCR fails, document is NOT saved (lines 716-719)
+- **Error Handling:** If OCR fails, document is NOT saved (try-catch block lines 697-720, catch handler lines 716-719)
 
 ### Requirement 2: Text Extraction
 **Requirement:** "Extract all readable text from the image"
@@ -158,6 +158,7 @@ Display matching documents with indicators
 - **Behavior:** OCR will fail with error
 - **Cause:** CDN blocked or offline
 - **Solution:** Check browser console, ensure `https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js` loads
+- **Security Note:** Current implementation loads from CDN without Subresource Integrity (SRI) hash. For production, consider adding SRI hash or hosting Tesseract.js locally to prevent CDN-based attacks and ensure availability
 
 ## Database Schema
 
