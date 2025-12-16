@@ -1676,7 +1676,7 @@ const DocuScanApp = (function() {
                     <div class="day-number">${day}</div>
                     <div class="day-appointments">
                         ${dayAppointments.slice(0, 3).map(appt => `
-                            <div class="calendar-appointment-dot" title="${escapeHtml(appt.title)}" onclick="DocuScanApp.editAppointment('${escapeHtml(appt.id)}')">
+                            <div class="calendar-appointment-dot" title="${escapeHtml(appt.title)}" onclick="DocuScanApp.editAppointment('${appt.id}')">
                                 ${escapeHtml(appt.title)}
                             </div>
                         `).join('')}
@@ -1728,7 +1728,7 @@ const DocuScanApp = (function() {
                 html += `
                     <div class="week-time-slot">
                         ${dayAppointments.map(appt => `
-                            <div class="week-appointment" onclick="DocuScanApp.editAppointment('${escapeHtml(appt.id)}')" title="${escapeHtml(appt.title)}">
+                            <div class="week-appointment" onclick="DocuScanApp.editAppointment('${appt.id}')" title="${escapeHtml(appt.title)}">
                                 ${escapeHtml(appt.title)}
                             </div>
                         `).join('')}
@@ -1758,7 +1758,7 @@ const DocuScanApp = (function() {
                     ${dayAppointments.map(appt => {
                         const time = new Date(appt.dateTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
                         return `
-                            <div class="day-appointment" onclick="DocuScanApp.editAppointment('${escapeHtml(appt.id)}')">
+                            <div class="day-appointment" onclick="DocuScanApp.editAppointment('${appt.id}')">
                                 <div class="day-appointment-title">${escapeHtml(appt.title)}</div>
                                 <div class="day-appointment-details">
                                     ${time}${appt.location ? ' • ' + escapeHtml(appt.location) : ''}
@@ -1819,7 +1819,7 @@ const DocuScanApp = (function() {
             const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
             
             return `
-                <div class="appointment-card" onclick="DocuScanApp.editAppointment('${escapeHtml(appt.id)}')">
+                <div class="appointment-card" onclick="DocuScanApp.editAppointment('${appt.id}')">
                     <div class="appointment-card-header">
                         <h3 class="appointment-title">${escapeHtml(appt.title)}</h3>
                         ${appt.category ? `<span class="appointment-category">${escapeHtml(appt.category)}</span>` : ''}
@@ -1836,8 +1836,8 @@ const DocuScanApp = (function() {
                         <div class="appointment-description">${escapeHtml(appt.description)}</div>
                     ` : ''}
                     <div class="appointment-actions">
-                        <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); DocuScanApp.editAppointment('${escapeHtml(appt.id)}')">✏️ Edit</button>
-                        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); DocuScanApp.confirmDeleteAppointment('${escapeHtml(appt.id)}')">🗑️ Delete</button>
+                        <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); DocuScanApp.editAppointment('${appt.id}')">✏️ Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); DocuScanApp.confirmDeleteAppointment('${appt.id}')">🗑️ Delete</button>
                     </div>
                 </div>
             `;
