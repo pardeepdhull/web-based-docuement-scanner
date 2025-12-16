@@ -336,48 +336,50 @@
                     <button class="btn-icon modal-close" id="close-appointment-modal-btn" title="Close">✕</button>
                 </div>
                 <form id="appointment-form" class="appointment-form">
-                    <div class="form-group">
-                        <label for="appointment-title">Title *</label>
-                        <input type="text" id="appointment-title" class="form-input" placeholder="Enter appointment title" required>
-                    </div>
-                    <div class="form-row">
+                    <div class="modal-body">
                         <div class="form-group">
-                            <label for="appointment-date">Date *</label>
-                            <input type="date" id="appointment-date" class="form-input" required>
+                            <label for="appointment-title">Title *</label>
+                            <input type="text" id="appointment-title" class="form-input" placeholder="Enter appointment title" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="appointment-date">Date *</label>
+                                <input type="date" id="appointment-date" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="appointment-time">Time *</label>
+                                <input type="time" id="appointment-time" class="form-input" required>
+                            </div>
                         </div>
                         <div class="form-group">
-                            <label for="appointment-time">Time *</label>
-                            <input type="time" id="appointment-time" class="form-input" required>
+                            <label for="appointment-location">Location</label>
+                            <input type="text" id="appointment-location" class="form-input" placeholder="Enter location (optional)">
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="appointment-location">Location</label>
-                        <input type="text" id="appointment-location" class="form-input" placeholder="Enter location (optional)">
-                    </div>
-                    <div class="form-group">
-                        <label for="appointment-category">Category</label>
-                        <input type="text" id="appointment-category" class="form-input" placeholder="e.g., Meeting, Personal, Medical" list="category-suggestions">
-                        <datalist id="category-suggestions">
-                            <option value="Meeting">
-                            <option value="Personal">
-                            <option value="Medical">
-                            <option value="Business">
-                            <option value="Social">
-                        </datalist>
-                    </div>
-                    <div class="form-group">
-                        <label for="appointment-description">Description/Notes</label>
-                        <textarea id="appointment-description" class="form-textarea" placeholder="Enter description or notes (optional)" rows="4"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="appointment-reminder">Reminder</label>
-                        <select id="appointment-reminder" class="form-select">
-                            <option value="none">No reminder</option>
-                            <option value="on-day">On the day</option>
-                            <option value="1-day-before">1 day before</option>
-                            <option value="2-days-before">2 days before</option>
-                            <option value="1-week-before">1 week before</option>
-                        </select>
+                        <div class="form-group">
+                            <label for="appointment-category">Category</label>
+                            <input type="text" id="appointment-category" class="form-input" placeholder="e.g., Meeting, Personal, Medical" list="category-suggestions">
+                            <datalist id="category-suggestions">
+                                <option value="Meeting">
+                                <option value="Personal">
+                                <option value="Medical">
+                                <option value="Business">
+                                <option value="Social">
+                            </datalist>
+                        </div>
+                        <div class="form-group">
+                            <label for="appointment-description">Description/Notes</label>
+                            <textarea id="appointment-description" class="form-textarea" placeholder="Enter description or notes (optional)" rows="4"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="appointment-reminder">Reminder</label>
+                            <select id="appointment-reminder" class="form-select">
+                                <option value="none">No reminder</option>
+                                <option value="on-day">On the day</option>
+                                <option value="1-day-before">1 day before</option>
+                                <option value="2-days-before">2 days before</option>
+                                <option value="1-week-before">1 week before</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" id="cancel-appointment-btn">Cancel</button>
