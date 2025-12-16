@@ -1,12 +1,12 @@
 /**
- * DocuScan - Authentication Module
+ * My Medical Details - Authentication Module
  * Handles user authentication for browser-front-end demonstration
  * Uses localStorage for credential storage (demo purposes only)
  */
 
 const DocuAuth = (function() {
-    const AUTH_KEY = 'docuscan_auth';
-    const USERS_KEY = 'docuscan_users';
+    const AUTH_KEY = 'mymedicaldetails_auth';
+    const USERS_KEY = 'mymedicaldetails_users';
     
     // Default admin user credentials
     const DEFAULT_USER = {

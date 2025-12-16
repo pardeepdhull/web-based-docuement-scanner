@@ -1,10 +1,10 @@
 /**
- * DocuScan - IndexedDB Database Module
+ * My Medical Details - IndexedDB Database Module
  * Handles all database operations for document storage
  */
 
 const DocuDB = (function() {
-    const DB_NAME = 'DocuScanDB';
+    const DB_NAME = 'MyMedicalDetailsDB';
     const DB_VERSION = 3;
     const STORE_NAME = 'documents';
     const APPOINTMENTS_STORE = 'appointments';
