@@ -5,8 +5,9 @@
 
 const DocuDB = (function() {
     const DB_NAME = 'DocuScanDB';
-    const DB_VERSION = 2;
+    const DB_VERSION = 3;
     const STORE_NAME = 'documents';
+    const APPOINTMENTS_STORE = 'appointments';
     
     let db = null;
 
@@ -54,6 +55,19 @@ const DocuDB = (function() {
                     if (!store.indexNames.contains('username')) {
                         store.createIndex('username', 'username', { unique: false });
                     }
+                }
+                
+                // Create appointments object store if it doesn't exist
+                if (!database.objectStoreNames.contains(APPOINTMENTS_STORE)) {
+                    const appointmentsStore = database.createObjectStore(APPOINTMENTS_STORE, {
+                        keyPath: 'id',
+                        autoIncrement: false
+                    });
+                    
+                    // Create indexes for searching and sorting
+                    appointmentsStore.createIndex('username', 'username', { unique: false });
+                    appointmentsStore.createIndex('dateTime', 'dateTime', { unique: false });
+                    appointmentsStore.createIndex('category', 'category', { unique: false });
                 }
             };
         });
@@ -283,6 +297,169 @@ const DocuDB = (function() {
         );
     }
 
+    // ========== APPOINTMENTS FUNCTIONS ==========
+
+    /**
+     * Generate a unique ID for appointments
+     * @returns {string}
+     */
+    function generateAppointmentId() {
+        const randomPart = crypto.getRandomValues(new Uint32Array(2));
+        return 'appt_' + Date.now() + '_' + randomPart[0].toString(36) + randomPart[1].toString(36);
+    }
+
+    /**
+     * Add a new appointment to the database
+     * @param {Object} appointment - Appointment object
+     * @param {string} username - Username of the appointment owner
+     * @returns {Promise<string>} - Appointment ID
+     */
+    async function addAppointment(appointment, username) {
+        await init();
+        
+        if (!username) {
+            throw new Error('Username is required to add an appointment');
+        }
+        
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([APPOINTMENTS_STORE], 'readwrite');
+            const store = transaction.objectStore(APPOINTMENTS_STORE);
+            
+            const appt = {
+                id: generateAppointmentId(),
+                title: appointment.title || 'Untitled Appointment',
+                dateTime: appointment.dateTime,
+                description: appointment.description || '',
+                location: appointment.location || '',
+                category: appointment.category || '',
+                reminder: appointment.reminder || 'none',
+                username: username,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            const request = store.add(appt);
+            
+            request.onsuccess = () => {
+                resolve(appt.id);
+            };
+            
+            request.onerror = () => {
+                reject(new Error('Failed to add appointment'));
+            };
+        });
+    }
+
+    /**
+     * Get an appointment by ID
+     * @param {string} id - Appointment ID
+     * @returns {Promise<Object|null>}
+     */
+    async function getAppointment(id) {
+        await init();
+        
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([APPOINTMENTS_STORE], 'readonly');
+            const store = transaction.objectStore(APPOINTMENTS_STORE);
+            const request = store.get(id);
+            
+            request.onsuccess = () => {
+                resolve(request.result || null);
+            };
+            
+            request.onerror = () => {
+                reject(new Error('Failed to get appointment'));
+            };
+        });
+    }
+
+    /**
+     * Get appointments by username
+     * @param {string} username - Username to filter by
+     * @returns {Promise<Array>}
+     */
+    async function getAppointmentsByUser(username) {
+        await init();
+        
+        if (!username) {
+            return [];
+        }
+        
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([APPOINTMENTS_STORE], 'readonly');
+            const store = transaction.objectStore(APPOINTMENTS_STORE);
+            const index = store.index('username');
+            const request = index.getAll(username);
+            
+            request.onsuccess = () => {
+                resolve(request.result || []);
+            };
+            
+            request.onerror = () => {
+                reject(new Error('Failed to get appointments by user'));
+            };
+        });
+    }
+
+    /**
+     * Update an appointment
+     * @param {string} id - Appointment ID
+     * @param {Object} updates - Fields to update
+     * @returns {Promise<void>}
+     */
+    async function updateAppointment(id, updates) {
+        await init();
+        
+        const appt = await getAppointment(id);
+        if (!appt) {
+            throw new Error('Appointment not found');
+        }
+        
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([APPOINTMENTS_STORE], 'readwrite');
+            const store = transaction.objectStore(APPOINTMENTS_STORE);
+            
+            const updatedAppt = {
+                ...appt,
+                ...updates,
+                updatedAt: new Date().toISOString()
+            };
+            
+            const request = store.put(updatedAppt);
+            
+            request.onsuccess = () => {
+                resolve();
+            };
+            
+            request.onerror = () => {
+                reject(new Error('Failed to update appointment'));
+            };
+        });
+    }
+
+    /**
+     * Delete an appointment
+     * @param {string} id - Appointment ID
+     * @returns {Promise<void>}
+     */
+    async function deleteAppointment(id) {
+        await init();
+        
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([APPOINTMENTS_STORE], 'readwrite');
+            const store = transaction.objectStore(APPOINTMENTS_STORE);
+            const request = store.delete(id);
+            
+            request.onsuccess = () => {
+                resolve();
+            };
+            
+            request.onerror = () => {
+                reject(new Error('Failed to delete appointment'));
+            };
+        });
+    }
+
     // Public API
     return {
         init,
@@ -293,7 +470,13 @@ const DocuDB = (function() {
         updateDocument,
         deleteDocument,
         clearAll,
-        searchDocuments
+        searchDocuments,
+        // Appointments API
+        addAppointment,
+        getAppointment,
+        getAppointmentsByUser,
+        updateAppointment,
+        deleteAppointment
     };
 })();
 

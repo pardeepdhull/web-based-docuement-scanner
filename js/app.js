@@ -10,6 +10,12 @@ const DocuScanApp = (function() {
     let cameraStream = null;
     let isEditing = false;
     let documents = [];
+    
+    // Appointments state
+    let appointments = [];
+    let currentAppointmentId = null;
+    let currentCalendarView = 'month';
+    let currentDate = new Date();
 
     // DOM Elements
     const elements = {
@@ -40,6 +46,7 @@ const DocuScanApp = (function() {
         // Views
         scanView: document.getElementById('scan-view'),
         documentsView: document.getElementById('documents-view'),
+        appointmentsView: document.getElementById('appointments-view'),
         usersView: document.getElementById('users-view'),
         
         // Scan View Elements
@@ -77,6 +84,38 @@ const DocuScanApp = (function() {
         // User Management Elements
         usersList: document.getElementById('users-list'),
         noUsers: document.getElementById('no-users'),
+        
+        // Appointments Elements
+        calendarViewBtns: document.querySelectorAll('.view-toggle-btn'),
+        addAppointmentBtn: document.getElementById('add-appointment-btn'),
+        addAppointmentBtn2: document.getElementById('add-appointment-btn-2'),
+        prevPeriodBtn: document.getElementById('prev-period-btn'),
+        nextPeriodBtn: document.getElementById('next-period-btn'),
+        todayBtn: document.getElementById('today-btn'),
+        currentPeriod: document.getElementById('current-period'),
+        monthCalendar: document.getElementById('month-calendar'),
+        weekCalendar: document.getElementById('week-calendar'),
+        dayCalendar: document.getElementById('day-calendar'),
+        calendarGrid: document.getElementById('calendar-grid'),
+        weekGrid: document.getElementById('week-grid'),
+        dayGrid: document.getElementById('day-grid'),
+        appointmentsList: document.getElementById('appointments-list'),
+        noAppointments: document.getElementById('no-appointments'),
+        
+        // Appointment Modal Elements
+        appointmentModal: document.getElementById('appointment-modal'),
+        appointmentModalTitle: document.getElementById('appointment-modal-title'),
+        closeAppointmentModalBtn: document.getElementById('close-appointment-modal-btn'),
+        appointmentForm: document.getElementById('appointment-form'),
+        appointmentTitle: document.getElementById('appointment-title'),
+        appointmentDate: document.getElementById('appointment-date'),
+        appointmentTime: document.getElementById('appointment-time'),
+        appointmentLocation: document.getElementById('appointment-location'),
+        appointmentCategory: document.getElementById('appointment-category'),
+        appointmentDescription: document.getElementById('appointment-description'),
+        appointmentReminder: document.getElementById('appointment-reminder'),
+        cancelAppointmentBtn: document.getElementById('cancel-appointment-btn'),
+        saveAppointmentBtn: document.getElementById('save-appointment-btn'),
         
         // Viewer Modal Elements
         viewerModal: document.getElementById('viewer-modal'),
@@ -345,6 +384,44 @@ const DocuScanApp = (function() {
         elements.searchInput.addEventListener('input', debounce(filterDocuments, 300));
         elements.sortSelect.addEventListener('change', sortDocuments);
         elements.goScanBtn.addEventListener('click', () => switchView('scan'));
+        
+        // Appointments View
+        if (elements.calendarViewBtns) {
+            elements.calendarViewBtns.forEach(btn => {
+                btn.addEventListener('click', () => switchCalendarView(btn.dataset.calendarView));
+            });
+        }
+        if (elements.addAppointmentBtn) {
+            elements.addAppointmentBtn.addEventListener('click', () => openAppointmentModal());
+        }
+        if (elements.addAppointmentBtn2) {
+            elements.addAppointmentBtn2.addEventListener('click', () => openAppointmentModal());
+        }
+        if (elements.prevPeriodBtn) {
+            elements.prevPeriodBtn.addEventListener('click', navigatePreviousPeriod);
+        }
+        if (elements.nextPeriodBtn) {
+            elements.nextPeriodBtn.addEventListener('click', navigateNextPeriod);
+        }
+        if (elements.todayBtn) {
+            elements.todayBtn.addEventListener('click', navigateToday);
+        }
+        
+        // Appointment Modal
+        if (elements.closeAppointmentModalBtn) {
+            elements.closeAppointmentModalBtn.addEventListener('click', closeAppointmentModal);
+        }
+        if (elements.cancelAppointmentBtn) {
+            elements.cancelAppointmentBtn.addEventListener('click', closeAppointmentModal);
+        }
+        if (elements.appointmentForm) {
+            elements.appointmentForm.addEventListener('submit', saveAppointment);
+        }
+        if (elements.appointmentModal) {
+            elements.appointmentModal.addEventListener('click', (e) => {
+                if (e.target === elements.appointmentModal) closeAppointmentModal();
+            });
+        }
 
         // Viewer Modal
         elements.closeViewerBtn.addEventListener('click', closeViewer);
@@ -383,6 +460,8 @@ const DocuScanApp = (function() {
             if (e.key === 'Escape') {
                 if (!elements.confirmModal.classList.contains('hidden')) {
                     hideConfirm();
+                } else if (!elements.appointmentModal.classList.contains('hidden')) {
+                    closeAppointmentModal();
                 } else if (!elements.viewerModal.classList.contains('hidden')) {
                     closeViewer();
                 } else if (!elements.cameraContainer.classList.contains('hidden')) {
@@ -398,7 +477,7 @@ const DocuScanApp = (function() {
 
     /**
      * Switch between views
-     * @param {string} view - View name ('scan', 'documents', or 'users')
+     * @param {string} view - View name ('scan', 'documents', 'appointments', or 'users')
      */
     function switchView(view) {
         // Check if user is trying to access admin-only view
@@ -417,6 +496,9 @@ const DocuScanApp = (function() {
         // Update views
         elements.scanView.classList.toggle('active', view === 'scan');
         elements.documentsView.classList.toggle('active', view === 'documents');
+        if (elements.appointmentsView) {
+            elements.appointmentsView.classList.toggle('active', view === 'appointments');
+        }
         if (elements.usersView) {
             elements.usersView.classList.toggle('active', view === 'users');
         }
@@ -431,6 +513,12 @@ const DocuScanApp = (function() {
         // Reload documents when switching to documents view
         if (view === 'documents') {
             loadDocuments();
+        }
+        
+        // Load appointments when switching to appointments view
+        if (view === 'appointments') {
+            loadAppointments();
+            renderCalendar();
         }
         
         // Load users when switching to users view
@@ -1433,6 +1521,469 @@ const DocuScanApp = (function() {
         }
     }
 
+    // ========== APPOINTMENTS FUNCTIONS ==========
+
+    /**
+     * Load appointments from database
+     */
+    async function loadAppointments() {
+        try {
+            const username = DocuAuth.getCurrentUsername();
+            if (!username) return;
+            
+            appointments = await DocuDB.getAppointmentsByUser(username);
+            renderAppointmentsList();
+        } catch (error) {
+            console.error('Error loading appointments:', error);
+            showToast('Failed to load appointments', 'error');
+        }
+    }
+
+    /**
+     * Switch calendar view
+     * @param {string} view - 'month', 'week', or 'day'
+     */
+    function switchCalendarView(view) {
+        currentCalendarView = view;
+        
+        // Update buttons
+        elements.calendarViewBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.calendarView === view);
+        });
+        
+        // Update calendar views
+        if (elements.monthCalendar) {
+            elements.monthCalendar.classList.toggle('active', view === 'month');
+        }
+        if (elements.weekCalendar) {
+            elements.weekCalendar.classList.toggle('active', view === 'week');
+        }
+        if (elements.dayCalendar) {
+            elements.dayCalendar.classList.toggle('active', view === 'day');
+        }
+        
+        renderCalendar();
+    }
+
+    /**
+     * Navigate to previous period
+     */
+    function navigatePreviousPeriod() {
+        if (currentCalendarView === 'month') {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+        } else if (currentCalendarView === 'week') {
+            currentDate.setDate(currentDate.getDate() - 7);
+        } else if (currentCalendarView === 'day') {
+            currentDate.setDate(currentDate.getDate() - 1);
+        }
+        renderCalendar();
+    }
+
+    /**
+     * Navigate to next period
+     */
+    function navigateNextPeriod() {
+        if (currentCalendarView === 'month') {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+        } else if (currentCalendarView === 'week') {
+            currentDate.setDate(currentDate.getDate() + 7);
+        } else if (currentCalendarView === 'day') {
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+        renderCalendar();
+    }
+
+    /**
+     * Navigate to today
+     */
+    function navigateToday() {
+        currentDate = new Date();
+        renderCalendar();
+    }
+
+    /**
+     * Render the calendar based on current view
+     */
+    function renderCalendar() {
+        if (currentCalendarView === 'month') {
+            renderMonthCalendar();
+        } else if (currentCalendarView === 'week') {
+            renderWeekCalendar();
+        } else if (currentCalendarView === 'day') {
+            renderDayCalendar();
+        }
+        updatePeriodLabel();
+    }
+
+    /**
+     * Update period label
+     */
+    function updatePeriodLabel() {
+        if (!elements.currentPeriod) return;
+        
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+        
+        if (currentCalendarView === 'month') {
+            elements.currentPeriod.textContent = `${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+        } else if (currentCalendarView === 'week') {
+            const startOfWeek = new Date(currentDate);
+            startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            elements.currentPeriod.textContent = `${months[startOfWeek.getMonth()]} ${startOfWeek.getDate()} - ${months[endOfWeek.getMonth()]} ${endOfWeek.getDate()}, ${currentDate.getFullYear()}`;
+        } else if (currentCalendarView === 'day') {
+            elements.currentPeriod.textContent = `${months[currentDate.getMonth()]} ${currentDate.getDate()}, ${currentDate.getFullYear()}`;
+        }
+    }
+
+    /**
+     * Render month calendar
+     */
+    function renderMonthCalendar() {
+        if (!elements.calendarGrid) return;
+        
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const prevLastDay = new Date(year, month, 0);
+        
+        const firstDayOfWeek = firstDay.getDay();
+        const daysInMonth = lastDay.getDate();
+        const daysInPrevMonth = prevLastDay.getDate();
+        
+        let html = '';
+        const today = new Date();
+        
+        // Previous month days
+        for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+            const day = daysInPrevMonth - i;
+            html += `<div class="calendar-day other-month"><div class="day-number">${day}</div></div>`;
+        }
+        
+        // Current month days
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(year, month, day);
+            const isToday = date.toDateString() === today.toDateString();
+            const dayAppointments = getAppointmentsForDate(date);
+            
+            let dayClass = 'calendar-day';
+            if (isToday) dayClass += ' today';
+            
+            html += `
+                <div class="${dayClass}" data-date="${date.toISOString()}">
+                    <div class="day-number">${day}</div>
+                    <div class="day-appointments">
+                        ${dayAppointments.slice(0, 3).map(appt => `
+                            <div class="calendar-appointment-dot" title="${appt.title}" onclick="DocuScanApp.editAppointment('${appt.id}')">
+                                ${appt.title}
+                            </div>
+                        `).join('')}
+                        ${dayAppointments.length > 3 ? `<div class="calendar-appointment-dot">+${dayAppointments.length - 3} more</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Next month days
+        const totalCells = firstDayOfWeek + daysInMonth;
+        const remainingCells = 7 - (totalCells % 7);
+        if (remainingCells < 7) {
+            for (let day = 1; day <= remainingCells; day++) {
+                html += `<div class="calendar-day other-month"><div class="day-number">${day}</div></div>`;
+            }
+        }
+        
+        elements.calendarGrid.innerHTML = html;
+    }
+
+    /**
+     * Render week calendar
+     */
+    function renderWeekCalendar() {
+        if (!elements.weekGrid) return;
+        
+        const startOfWeek = new Date(currentDate);
+        startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+        
+        let html = '<div class="week-time-label"></div>';
+        
+        // Day headers
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(startOfWeek);
+            date.setDate(startOfWeek.getDate() + i);
+            html += `<div class="week-day-header">${days[i]}<br>${date.getDate()}</div>`;
+        }
+        
+        // Time slots (8 AM to 8 PM)
+        for (let hour = 8; hour <= 20; hour++) {
+            html += `<div class="week-time-label">${hour}:00</div>`;
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(startOfWeek);
+                date.setDate(startOfWeek.getDate() + i);
+                const dayAppointments = getAppointmentsForDateHour(date, hour);
+                
+                html += `
+                    <div class="week-time-slot">
+                        ${dayAppointments.map(appt => `
+                            <div class="week-appointment" onclick="DocuScanApp.editAppointment('${appt.id}')" title="${appt.title}">
+                                ${appt.title}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+        }
+        
+        elements.weekGrid.innerHTML = html;
+    }
+
+    /**
+     * Render day calendar
+     */
+    function renderDayCalendar() {
+        if (!elements.dayGrid) return;
+        
+        let html = '';
+        
+        // Time slots (8 AM to 8 PM)
+        for (let hour = 8; hour <= 20; hour++) {
+            const dayAppointments = getAppointmentsForDateHour(currentDate, hour);
+            
+            html += `
+                <div class="day-time-label">${hour}:00</div>
+                <div class="day-time-slot">
+                    ${dayAppointments.map(appt => {
+                        const time = new Date(appt.dateTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                        return `
+                            <div class="day-appointment" onclick="DocuScanApp.editAppointment('${appt.id}')">
+                                <div class="day-appointment-title">${appt.title}</div>
+                                <div class="day-appointment-details">
+                                    ${time}${appt.location ? ' • ' + appt.location : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+        
+        elements.dayGrid.innerHTML = html;
+    }
+
+    /**
+     * Get appointments for a specific date
+     */
+    function getAppointmentsForDate(date) {
+        const dateStr = date.toDateString();
+        return appointments.filter(appt => {
+            const apptDate = new Date(appt.dateTime);
+            return apptDate.toDateString() === dateStr;
+        }).sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+    }
+
+    /**
+     * Get appointments for a specific date and hour
+     */
+    function getAppointmentsForDateHour(date, hour) {
+        const dateStr = date.toDateString();
+        return appointments.filter(appt => {
+            const apptDate = new Date(appt.dateTime);
+            return apptDate.toDateString() === dateStr && apptDate.getHours() === hour;
+        }).sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+    }
+
+    /**
+     * Render appointments list
+     */
+    function renderAppointmentsList() {
+        if (!elements.appointmentsList) return;
+        
+        const now = new Date();
+        const upcoming = appointments.filter(appt => new Date(appt.dateTime) >= now)
+            .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+        
+        if (upcoming.length === 0) {
+            elements.noAppointments.classList.remove('hidden');
+            elements.appointmentsList.innerHTML = '';
+            return;
+        }
+        
+        elements.noAppointments.classList.add('hidden');
+        
+        elements.appointmentsList.innerHTML = upcoming.map(appt => {
+            const date = new Date(appt.dateTime);
+            const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+            const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            
+            return `
+                <div class="appointment-card" onclick="DocuScanApp.editAppointment('${appt.id}')">
+                    <div class="appointment-card-header">
+                        <h3 class="appointment-title">${appt.title}</h3>
+                        ${appt.category ? `<span class="appointment-category">${appt.category}</span>` : ''}
+                    </div>
+                    <div class="appointment-datetime">
+                        <span>📅</span> ${dateStr} at ${timeStr}
+                    </div>
+                    ${appt.location ? `
+                        <div class="appointment-location">
+                            <span>📍</span> ${appt.location}
+                        </div>
+                    ` : ''}
+                    ${appt.description ? `
+                        <div class="appointment-description">${appt.description}</div>
+                    ` : ''}
+                    <div class="appointment-actions">
+                        <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); DocuScanApp.editAppointment('${appt.id}')">✏️ Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); DocuScanApp.confirmDeleteAppointment('${appt.id}')">🗑️ Delete</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    /**
+     * Open appointment modal
+     * @param {string} id - Optional appointment ID for editing
+     */
+    function openAppointmentModal(id = null) {
+        if (!elements.appointmentModal) return;
+        
+        currentAppointmentId = id;
+        
+        if (id) {
+            // Editing existing appointment
+            const appt = appointments.find(a => a.id === id);
+            if (appt) {
+                elements.appointmentModalTitle.textContent = 'Edit Appointment';
+                elements.appointmentTitle.value = appt.title;
+                
+                const date = new Date(appt.dateTime);
+                elements.appointmentDate.value = date.toISOString().split('T')[0];
+                elements.appointmentTime.value = date.toTimeString().slice(0, 5);
+                
+                elements.appointmentLocation.value = appt.location || '';
+                elements.appointmentCategory.value = appt.category || '';
+                elements.appointmentDescription.value = appt.description || '';
+                elements.appointmentReminder.value = appt.reminder || 'none';
+            }
+        } else {
+            // Creating new appointment
+            elements.appointmentModalTitle.textContent = 'Add Appointment';
+            elements.appointmentForm.reset();
+            
+            // Set default date to today
+            const today = new Date();
+            elements.appointmentDate.value = today.toISOString().split('T')[0];
+        }
+        
+        elements.appointmentModal.classList.remove('hidden');
+    }
+
+    /**
+     * Close appointment modal
+     */
+    function closeAppointmentModal() {
+        if (!elements.appointmentModal) return;
+        
+        elements.appointmentModal.classList.add('hidden');
+        elements.appointmentForm.reset();
+        currentAppointmentId = null;
+    }
+
+    /**
+     * Save appointment
+     */
+    async function saveAppointment(event) {
+        event.preventDefault();
+        
+        const title = elements.appointmentTitle.value.trim();
+        const date = elements.appointmentDate.value;
+        const time = elements.appointmentTime.value;
+        const location = elements.appointmentLocation.value.trim();
+        const category = elements.appointmentCategory.value.trim();
+        const description = elements.appointmentDescription.value.trim();
+        const reminder = elements.appointmentReminder.value;
+        
+        if (!title || !date || !time) {
+            showToast('Please fill in all required fields', 'error');
+            return;
+        }
+        
+        const dateTime = new Date(`${date}T${time}`).toISOString();
+        
+        const appointmentData = {
+            title,
+            dateTime,
+            location,
+            category,
+            description,
+            reminder
+        };
+        
+        try {
+            const username = DocuAuth.getCurrentUsername();
+            
+            if (currentAppointmentId) {
+                // Update existing appointment
+                await DocuDB.updateAppointment(currentAppointmentId, appointmentData);
+                showToast('Appointment updated successfully', 'success');
+            } else {
+                // Create new appointment
+                await DocuDB.addAppointment(appointmentData, username);
+                showToast('Appointment added successfully', 'success');
+            }
+            
+            closeAppointmentModal();
+            await loadAppointments();
+            renderCalendar();
+        } catch (error) {
+            console.error('Error saving appointment:', error);
+            showToast('Failed to save appointment', 'error');
+        }
+    }
+
+    /**
+     * Edit appointment
+     * @param {string} id - Appointment ID
+     */
+    function editAppointment(id) {
+        openAppointmentModal(id);
+    }
+
+    /**
+     * Confirm delete appointment
+     * @param {string} id - Appointment ID
+     */
+    function confirmDeleteAppointment(id) {
+        const appt = appointments.find(a => a.id === id);
+        if (!appt) return;
+        
+        showConfirm(
+            'Delete Appointment',
+            `Are you sure you want to delete "${appt.title}"?`,
+            () => deleteAppointmentById(id)
+        );
+    }
+
+    /**
+     * Delete appointment
+     * @param {string} id - Appointment ID
+     */
+    async function deleteAppointmentById(id) {
+        try {
+            await DocuDB.deleteAppointment(id);
+            showToast('Appointment deleted successfully', 'success');
+            await loadAppointments();
+            renderCalendar();
+        } catch (error) {
+            console.error('Error deleting appointment:', error);
+            showToast('Failed to delete appointment', 'error');
+        }
+    }
+
     // Initialize on DOM ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
@@ -1445,6 +1996,8 @@ const DocuScanApp = (function() {
         switchView,
         loadDocuments,
         toggleUserStatus,
-        confirmDeleteUser
+        confirmDeleteUser,
+        editAppointment,
+        confirmDeleteAppointment
     };
 })();
