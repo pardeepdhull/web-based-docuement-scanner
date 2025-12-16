@@ -86,6 +86,10 @@
                     <span class="nav-icon">📁</span>
                     <span class="nav-text">List of documents</span>
                 </button>
+                <button class="nav-btn" data-view="appointments">
+                    <span class="nav-icon">📅</span>
+                    <span class="nav-text">Appointments</span>
+                </button>
                 <button class="nav-btn hidden" id="user-management-nav-btn" data-view="users">
                     <span class="nav-icon">👥</span>
                     <span class="nav-text">User Management</span>
@@ -233,6 +237,77 @@
             </div>
         </section>
 
+        <!-- Appointments View -->
+        <section id="appointments-view" class="view">
+            <div class="view-header">
+                <h1>My Appointments</h1>
+                <p>Manage your appointments and schedule</p>
+            </div>
+            
+            <div class="appointments-toolbar">
+                <div class="calendar-view-selector">
+                    <button class="view-toggle-btn active" data-calendar-view="month">Month</button>
+                    <button class="view-toggle-btn" data-calendar-view="week">Week</button>
+                    <button class="view-toggle-btn" data-calendar-view="day">Day</button>
+                </div>
+                <button class="btn btn-primary" id="add-appointment-btn">
+                    <span class="nav-icon">➕</span> Add Appointment
+                </button>
+            </div>
+
+            <div class="calendar-navigation">
+                <button class="btn btn-secondary btn-sm" id="prev-period-btn">‹ Previous</button>
+                <h2 id="current-period" class="current-period">December 2025</h2>
+                <button class="btn btn-secondary btn-sm" id="next-period-btn">Next ›</button>
+                <button class="btn btn-secondary btn-sm" id="today-btn">Today</button>
+            </div>
+
+            <div class="calendar-container">
+                <!-- Month View -->
+                <div id="month-calendar" class="calendar-view active">
+                    <div class="calendar-weekdays">
+                        <div class="weekday">Sun</div>
+                        <div class="weekday">Mon</div>
+                        <div class="weekday">Tue</div>
+                        <div class="weekday">Wed</div>
+                        <div class="weekday">Thu</div>
+                        <div class="weekday">Fri</div>
+                        <div class="weekday">Sat</div>
+                    </div>
+                    <div id="calendar-grid" class="calendar-grid">
+                        <!-- Calendar days will be dynamically inserted here -->
+                    </div>
+                </div>
+
+                <!-- Week View -->
+                <div id="week-calendar" class="calendar-view">
+                    <div id="week-grid" class="week-grid">
+                        <!-- Week view will be dynamically inserted here -->
+                    </div>
+                </div>
+
+                <!-- Day View -->
+                <div id="day-calendar" class="calendar-view">
+                    <div id="day-grid" class="day-grid">
+                        <!-- Day view will be dynamically inserted here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="appointments-list-section">
+                <h3>Upcoming Appointments</h3>
+                <div id="appointments-list" class="appointments-list">
+                    <!-- Appointments will be dynamically inserted here -->
+                </div>
+                <div id="no-appointments" class="no-documents hidden">
+                    <div class="empty-icon">📅</div>
+                    <h3>No Appointments Yet</h3>
+                    <p>Start by adding your first appointment</p>
+                    <button class="btn btn-primary" id="add-appointment-btn-2">Add Appointment</button>
+                </div>
+            </div>
+        </section>
+
         <!-- User Management View (Admin Only) -->
         <section id="users-view" class="view">
             <div class="view-header">
@@ -252,6 +327,67 @@
                 <p>You are currently the only user in the system</p>
             </div>
         </section>
+
+        <!-- Appointment Modal -->
+        <div id="appointment-modal" class="modal hidden">
+            <div class="modal-content appointment-modal-content">
+                <div class="modal-header">
+                    <h2 id="appointment-modal-title">Add Appointment</h2>
+                    <button class="btn-icon modal-close" id="close-appointment-modal-btn" title="Close">✕</button>
+                </div>
+                <form id="appointment-form" class="appointment-form">
+                    <div class="form-group">
+                        <label for="appointment-title">Title *</label>
+                        <input type="text" id="appointment-title" class="form-input" placeholder="Enter appointment title" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="appointment-date">Date *</label>
+                            <input type="date" id="appointment-date" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="appointment-time">Time *</label>
+                            <input type="time" id="appointment-time" class="form-input" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="appointment-location">Location</label>
+                        <input type="text" id="appointment-location" class="form-input" placeholder="Enter location (optional)">
+                    </div>
+                    <div class="form-group">
+                        <label for="appointment-category">Category</label>
+                        <input type="text" id="appointment-category" class="form-input" placeholder="e.g., Meeting, Personal, Medical" list="category-suggestions">
+                        <datalist id="category-suggestions">
+                            <option value="Meeting">
+                            <option value="Personal">
+                            <option value="Medical">
+                            <option value="Business">
+                            <option value="Social">
+                        </datalist>
+                    </div>
+                    <div class="form-group">
+                        <label for="appointment-description">Description/Notes</label>
+                        <textarea id="appointment-description" class="form-textarea" placeholder="Enter description or notes (optional)" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="appointment-reminder">Reminder</label>
+                        <select id="appointment-reminder" class="form-select">
+                            <option value="none">No reminder</option>
+                            <option value="on-day">On the day</option>
+                            <option value="1-day-before">1 day before</option>
+                            <option value="2-days-before">2 days before</option>
+                            <option value="1-week-before">1 week before</option>
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="cancel-appointment-btn">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="save-appointment-btn">
+                            <span class="btn-text">Save Appointment</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
         <!-- Document Viewer Modal -->
         <div id="viewer-modal" class="modal hidden">
