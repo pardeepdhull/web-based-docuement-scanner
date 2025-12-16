@@ -1,8 +1,8 @@
-# DocuScan - Web-Based Document Scanner & OCR
+# My Medical Details - Web-Based Document Scanner & OCR
 
 A complete web-based document scanning and OCR (Optical Character Recognition) application that runs entirely in the browser without requiring any software installation.
 
-![DocuScan](https://img.shields.io/badge/DocuScan-v1.0.0-blue)
+![My Medical Details](https://img.shields.io/badge/My%20Medical%20Details-v1.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Browser](https://img.shields.io/badge/browser-compatible-brightgreen)
 
@@ -38,7 +38,7 @@ A complete web-based document scanning and OCR (Optical Character Recognition) a
 
 ## 📦 Installation
 
-No installation required! DocuScan runs entirely in your browser.
+No installation required! My Medical Details runs entirely in your browser.
 
 ### Option 1: Open Directly
 Simply open `index.html` in any modern web browser (Chrome, Firefox, Safari, Edge).
