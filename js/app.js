@@ -880,6 +880,9 @@ const MyMedicalDetailsApp = (function() {
         
         try {
             const worker = await Tesseract.createWorker('eng', 1, {
+                workerPath: 'vendor/tesseract.js/worker.min.js',
+                langPath: 'vendor/tessdata',
+                corePath: 'vendor',
                 logger: (m) => {
                     if (m.status === 'recognizing text') {
                         const progress = Math.round(m.progress * 100);

@@ -551,10 +551,16 @@
     </footer>
     </div><!-- End of app-container -->
 
-    <!-- Tesseract.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <!-- PDF.js CDN for PDF support -->
-    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+    <!-- Tesseract.js Local -->
+    <script src="vendor/tesseract.js/tesseract.min.js"></script>
+    <!-- PDF.js Local for PDF support -->
+    <script src="vendor/pdf.min.js"></script>
+    <script>
+        // Configure PDF.js worker path
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
+        }
+    </script>
     <!-- Application Scripts -->
     <script src="js/auth.js"></script>
     <script src="js/db.js"></script>
