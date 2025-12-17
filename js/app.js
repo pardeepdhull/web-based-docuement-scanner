@@ -16,6 +16,10 @@ const MyMedicalDetailsApp = (function() {
     let currentAppointmentId = null;
     let currentCalendarView = 'month';
     let currentDate = new Date();
+    
+    // Medications state
+    let medications = [];
+    let currentMedicationId = null;
 
     // DOM Elements
     const elements = {
@@ -47,6 +51,7 @@ const MyMedicalDetailsApp = (function() {
         scanView: document.getElementById('scan-view'),
         documentsView: document.getElementById('documents-view'),
         appointmentsView: document.getElementById('appointments-view'),
+        medicationsView: document.getElementById('medications-view'),
         usersView: document.getElementById('users-view'),
         
         // Scan View Elements
@@ -116,6 +121,26 @@ const MyMedicalDetailsApp = (function() {
         appointmentReminder: document.getElementById('appointment-reminder'),
         cancelAppointmentBtn: document.getElementById('cancel-appointment-btn'),
         saveAppointmentBtn: document.getElementById('save-appointment-btn'),
+        
+        // Medications Elements
+        addMedicationBtn: document.getElementById('add-medication-btn'),
+        addMedicationBtn2: document.getElementById('add-medication-btn-2'),
+        medicationSearchInput: document.getElementById('medication-search-input'),
+        medicationsList: document.getElementById('medications-list'),
+        noMedications: document.getElementById('no-medications'),
+        
+        // Medication Modal Elements
+        medicationModal: document.getElementById('medication-modal'),
+        medicationModalTitle: document.getElementById('medication-modal-title'),
+        closeMedicationModalBtn: document.getElementById('close-medication-modal-btn'),
+        medicationForm: document.getElementById('medication-form'),
+        medicationName: document.getElementById('medication-name'),
+        medicationDose: document.getElementById('medication-dose'),
+        medicationStartDate: document.getElementById('medication-start-date'),
+        medicationStopDate: document.getElementById('medication-stop-date'),
+        medicationNotes: document.getElementById('medication-notes'),
+        cancelMedicationBtn: document.getElementById('cancel-medication-btn'),
+        saveMedicationBtn: document.getElementById('save-medication-btn'),
         
         // Viewer Modal Elements
         viewerModal: document.getElementById('viewer-modal'),
@@ -423,6 +448,33 @@ const MyMedicalDetailsApp = (function() {
             });
         }
 
+        // Medications View
+        if (elements.addMedicationBtn) {
+            elements.addMedicationBtn.addEventListener('click', () => openMedicationModal());
+        }
+        if (elements.addMedicationBtn2) {
+            elements.addMedicationBtn2.addEventListener('click', () => openMedicationModal());
+        }
+        if (elements.medicationSearchInput) {
+            elements.medicationSearchInput.addEventListener('input', debounce(filterMedications, 300));
+        }
+        
+        // Medication Modal
+        if (elements.closeMedicationModalBtn) {
+            elements.closeMedicationModalBtn.addEventListener('click', closeMedicationModal);
+        }
+        if (elements.cancelMedicationBtn) {
+            elements.cancelMedicationBtn.addEventListener('click', closeMedicationModal);
+        }
+        if (elements.medicationForm) {
+            elements.medicationForm.addEventListener('submit', saveMedication);
+        }
+        if (elements.medicationModal) {
+            elements.medicationModal.addEventListener('click', (e) => {
+                if (e.target === elements.medicationModal) closeMedicationModal();
+            });
+        }
+
         // Viewer Modal
         elements.closeViewerBtn.addEventListener('click', closeViewer);
         elements.tabBtns.forEach(btn => {
@@ -462,6 +514,8 @@ const MyMedicalDetailsApp = (function() {
                     hideConfirm();
                 } else if (!elements.appointmentModal.classList.contains('hidden')) {
                     closeAppointmentModal();
+                } else if (!elements.medicationModal.classList.contains('hidden')) {
+                    closeMedicationModal();
                 } else if (!elements.viewerModal.classList.contains('hidden')) {
                     closeViewer();
                 } else if (!elements.cameraContainer.classList.contains('hidden')) {
@@ -499,6 +553,9 @@ const MyMedicalDetailsApp = (function() {
         if (elements.appointmentsView) {
             elements.appointmentsView.classList.toggle('active', view === 'appointments');
         }
+        if (elements.medicationsView) {
+            elements.medicationsView.classList.toggle('active', view === 'medications');
+        }
         if (elements.usersView) {
             elements.usersView.classList.toggle('active', view === 'users');
         }
@@ -519,6 +576,11 @@ const MyMedicalDetailsApp = (function() {
         if (view === 'appointments') {
             loadAppointments();
             renderCalendar();
+        }
+        
+        // Load medications when switching to medications view
+        if (view === 'medications') {
+            loadMedications();
         }
         
         // Load users when switching to users view
@@ -1984,6 +2046,254 @@ const MyMedicalDetailsApp = (function() {
         }
     }
 
+    // ========== MEDICATIONS FUNCTIONS ==========
+
+    /**
+     * Load medications from the database
+     */
+    async function loadMedications() {
+        try {
+            const username = DocuAuth.getCurrentUsername();
+            if (!username) {
+                medications = [];
+                renderMedications();
+                return;
+            }
+
+            medications = await DocuDB.getMedicationsByUser(username);
+            renderMedications();
+        } catch (error) {
+            console.error('Error loading medications:', error);
+            showToast('Failed to load medications', 'error');
+        }
+    }
+
+    /**
+     * Render medications list
+     */
+    function renderMedications() {
+        if (!elements.medicationsList || !elements.noMedications) {
+            return;
+        }
+
+        // Apply search filter if there's a search query
+        let filteredMedications = medications;
+        if (elements.medicationSearchInput && elements.medicationSearchInput.value.trim()) {
+            const query = elements.medicationSearchInput.value.toLowerCase();
+            filteredMedications = medications.filter(med =>
+                med.name.toLowerCase().includes(query) ||
+                (med.dose && med.dose.toLowerCase().includes(query)) ||
+                (med.notes && med.notes.toLowerCase().includes(query))
+            );
+        }
+
+        if (filteredMedications.length === 0) {
+            elements.medicationsList.innerHTML = '';
+            elements.noMedications.classList.remove('hidden');
+            return;
+        }
+
+        elements.noMedications.classList.add('hidden');
+
+        // Sort medications by start date (most recent first)
+        filteredMedications.sort((a, b) => {
+            if (!a.startDate) return 1;
+            if (!b.startDate) return -1;
+            return new Date(b.startDate) - new Date(a.startDate);
+        });
+
+        elements.medicationsList.innerHTML = filteredMedications.map(med => {
+            const startDate = med.startDate ? new Date(med.startDate).toLocaleDateString() : 'N/A';
+            const stopDate = med.stopDate ? new Date(med.stopDate).toLocaleDateString() : 'Ongoing';
+            
+            return `
+                <div class="medication-card">
+                    <div class="medication-card-header">
+                        <div class="medication-card-info">
+                            <div class="medication-card-title">${escapeHtml(med.name)}</div>
+                            <div class="medication-card-dose">${escapeHtml(med.dose)}</div>
+                            <div class="medication-card-dates">
+                                <div class="medication-date-item">
+                                    <span class="medication-date-label">Start Date</span>
+                                    <span class="medication-date-value">${startDate}</span>
+                                </div>
+                                <div class="medication-date-item">
+                                    <span class="medication-date-label">Stop Date</span>
+                                    <span class="medication-date-value">${stopDate}</span>
+                                </div>
+                            </div>
+                            ${med.notes ? `<div class="medication-card-notes">${escapeHtml(med.notes)}</div>` : ''}
+                        </div>
+                        <div class="medication-actions">
+                            <button class="btn btn-sm btn-secondary" onclick="MyMedicalDetailsApp.editMedication('${med.id}')" title="Edit">
+                                ✏️
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="MyMedicalDetailsApp.confirmDeleteMedication('${med.id}')" title="Delete">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    /**
+     * Filter medications based on search input
+     */
+    function filterMedications() {
+        renderMedications();
+    }
+
+    /**
+     * Open medication modal for adding or editing
+     * @param {string|null} id - Medication ID for editing, null for new
+     */
+    function openMedicationModal(id = null) {
+        if (!elements.medicationModal) return;
+
+        currentMedicationId = id;
+
+        if (id) {
+            // Editing existing medication
+            const medication = medications.find(m => m.id === id);
+            if (!medication) {
+                showToast('Medication not found', 'error');
+                return;
+            }
+
+            elements.medicationModalTitle.textContent = 'Edit Medication';
+            elements.medicationName.value = medication.name || '';
+            elements.medicationDose.value = medication.dose || '';
+            elements.medicationStartDate.value = medication.startDate || '';
+            elements.medicationStopDate.value = medication.stopDate || '';
+            elements.medicationNotes.value = medication.notes || '';
+        } else {
+            // Adding new medication
+            elements.medicationModalTitle.textContent = 'Add Medication';
+            elements.medicationForm.reset();
+        }
+
+        elements.medicationModal.classList.remove('hidden');
+        elements.medicationName.focus();
+    }
+
+    /**
+     * Close medication modal
+     */
+    function closeMedicationModal() {
+        if (!elements.medicationModal) return;
+        
+        elements.medicationModal.classList.add('hidden');
+        elements.medicationForm.reset();
+        currentMedicationId = null;
+    }
+
+    /**
+     * Save medication (add or update)
+     * @param {Event} event - Form submit event
+     */
+    async function saveMedication(event) {
+        event.preventDefault();
+
+        const medicationData = {
+            name: elements.medicationName.value.trim(),
+            dose: elements.medicationDose.value.trim(),
+            startDate: elements.medicationStartDate.value,
+            stopDate: elements.medicationStopDate.value,
+            notes: elements.medicationNotes.value.trim()
+        };
+
+        // Validation
+        if (!medicationData.name) {
+            showToast('Please enter a medication name', 'error');
+            return;
+        }
+
+        if (!medicationData.dose) {
+            showToast('Please enter a dose', 'error');
+            return;
+        }
+
+        if (!medicationData.startDate) {
+            showToast('Please enter a start date', 'error');
+            return;
+        }
+
+        // Validate stop date is not before start date
+        if (medicationData.stopDate && medicationData.startDate) {
+            if (new Date(medicationData.stopDate) < new Date(medicationData.startDate)) {
+                showToast('Stop date cannot be before start date', 'error');
+                return;
+            }
+        }
+
+        try {
+            const username = DocuAuth.getCurrentUsername();
+            if (!username) {
+                showToast('You must be logged in', 'error');
+                return;
+            }
+
+            if (currentMedicationId) {
+                // Update existing medication
+                await DocuDB.updateMedication(currentMedicationId, medicationData);
+                showToast('Medication updated successfully', 'success');
+            } else {
+                // Add new medication
+                await DocuDB.addMedication(medicationData, username);
+                showToast('Medication added successfully', 'success');
+            }
+
+            closeMedicationModal();
+            await loadMedications();
+        } catch (error) {
+            console.error('Error saving medication:', error);
+            showToast('Failed to save medication', 'error');
+        }
+    }
+
+    /**
+     * Edit a medication
+     * @param {string} id - Medication ID
+     */
+    function editMedication(id) {
+        openMedicationModal(id);
+    }
+
+    /**
+     * Show confirmation dialog for deleting a medication
+     * @param {string} id - Medication ID
+     */
+    function confirmDeleteMedication(id) {
+        const medication = medications.find(m => m.id === id);
+        if (!medication) {
+            showToast('Medication not found', 'error');
+            return;
+        }
+
+        showConfirm(
+            'Delete Medication',
+            `Are you sure you want to delete "${escapeHtml(medication.name)}"? This action cannot be undone.`,
+            () => deleteMedicationById(id)
+        );
+    }
+
+    /**
+     * Delete a medication by ID
+     * @param {string} id - Medication ID
+     */
+    async function deleteMedicationById(id) {
+        try {
+            await DocuDB.deleteMedication(id);
+            showToast('Medication deleted successfully', 'success');
+            await loadMedications();
+        } catch (error) {
+            console.error('Error deleting medication:', error);
+            showToast('Failed to delete medication', 'error');
+        }
+    }
+
     // Initialize on DOM ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
@@ -1998,6 +2308,8 @@ const MyMedicalDetailsApp = (function() {
         toggleUserStatus,
         confirmDeleteUser,
         editAppointment,
-        confirmDeleteAppointment
+        confirmDeleteAppointment,
+        editMedication,
+        confirmDeleteMedication
     };
 })();
