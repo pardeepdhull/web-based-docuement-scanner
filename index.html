@@ -90,6 +90,10 @@
                     <span class="nav-icon">📅</span>
                     <span class="nav-text">Appointments</span>
                 </button>
+                <button class="nav-btn" data-view="medications">
+                    <span class="nav-icon">💊</span>
+                    <span class="nav-text">My Medication List</span>
+                </button>
                 <button class="nav-btn hidden" id="user-management-nav-btn" data-view="users">
                     <span class="nav-icon">👥</span>
                     <span class="nav-text">User Management</span>
@@ -308,6 +312,35 @@
             </div>
         </section>
 
+        <!-- Medications View -->
+        <section id="medications-view" class="view">
+            <div class="view-header">
+                <h1>My Medication List</h1>
+                <p>Manage your medications and dosages</p>
+            </div>
+            
+            <div class="medications-toolbar">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="medication-search-input" placeholder="Search medications..." class="search-input">
+                </div>
+                <button class="btn btn-primary" id="add-medication-btn">
+                    <span class="nav-icon">➕</span> Add Medication
+                </button>
+            </div>
+
+            <div id="medications-list" class="medications-list">
+                <!-- Medications will be dynamically inserted here -->
+            </div>
+
+            <div id="no-medications" class="no-documents hidden">
+                <div class="empty-icon">💊</div>
+                <h3>No Medications Yet</h3>
+                <p>Start by adding your first medication</p>
+                <button class="btn btn-primary" id="add-medication-btn-2">Add Medication</button>
+            </div>
+        </section>
+
         <!-- User Management View (Admin Only) -->
         <section id="users-view" class="view">
             <div class="view-header">
@@ -385,6 +418,48 @@
                         <button type="button" class="btn btn-secondary" id="cancel-appointment-btn">Cancel</button>
                         <button type="submit" class="btn btn-primary" id="save-appointment-btn">
                             <span class="btn-text">Save Appointment</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Medication Modal -->
+        <div id="medication-modal" class="modal hidden">
+            <div class="modal-content medication-modal-content">
+                <div class="modal-header">
+                    <h2 id="medication-modal-title">Add Medication</h2>
+                    <button class="btn-icon modal-close" id="close-medication-modal-btn" title="Close">✕</button>
+                </div>
+                <form id="medication-form" class="medication-form">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="medication-name">Medication Name *</label>
+                            <input type="text" id="medication-name" class="form-input" placeholder="Enter medication name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="medication-dose">Dose *</label>
+                            <input type="text" id="medication-dose" class="form-input" placeholder="e.g., 500mg, 2 tablets" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="medication-start-date">Start Date *</label>
+                                <input type="date" id="medication-start-date" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="medication-stop-date">Stop Date</label>
+                                <input type="date" id="medication-stop-date" class="form-input">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="medication-notes">Notes</label>
+                            <textarea id="medication-notes" class="form-textarea" placeholder="Enter any notes or instructions (optional)" rows="4"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="cancel-medication-btn">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="save-medication-btn">
+                            <span class="btn-text">Save Medication</span>
                         </button>
                     </div>
                 </form>

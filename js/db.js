@@ -5,9 +5,10 @@
 
 const DocuDB = (function() {
     const DB_NAME = 'MyMedicalDetailsDB';
-    const DB_VERSION = 3;
+    const DB_VERSION = 4;
     const STORE_NAME = 'documents';
     const APPOINTMENTS_STORE = 'appointments';
+    const MEDICATIONS_STORE = 'medications';
     
     let db = null;
 
@@ -68,6 +69,19 @@ const DocuDB = (function() {
                     appointmentsStore.createIndex('username', 'username', { unique: false });
                     appointmentsStore.createIndex('dateTime', 'dateTime', { unique: false });
                     appointmentsStore.createIndex('category', 'category', { unique: false });
+                }
+                
+                // Create medications object store if it doesn't exist
+                if (!database.objectStoreNames.contains(MEDICATIONS_STORE)) {
+                    const medicationsStore = database.createObjectStore(MEDICATIONS_STORE, {
+                        keyPath: 'id',
+                        autoIncrement: false
+                    });
+                    
+                    // Create indexes for searching and sorting
+                    medicationsStore.createIndex('username', 'username', { unique: false });
+                    medicationsStore.createIndex('name', 'name', { unique: false });
+                    medicationsStore.createIndex('startDate', 'startDate', { unique: false });
                 }
             };
         });
@@ -460,6 +474,168 @@ const DocuDB = (function() {
         });
     }
 
+    // ========== MEDICATIONS FUNCTIONS ==========
+
+    /**
+     * Generate a unique ID for medications
+     * @returns {string}
+     */
+    function generateMedicationId() {
+        const randomPart = crypto.getRandomValues(new Uint32Array(2));
+        return 'med_' + Date.now() + '_' + randomPart[0].toString(36) + randomPart[1].toString(36);
+    }
+
+    /**
+     * Add a new medication to the database
+     * @param {Object} medication - Medication object
+     * @param {string} username - Username of the medication owner
+     * @returns {Promise<string>} - Medication ID
+     */
+    async function addMedication(medication, username) {
+        await init();
+        
+        if (!username) {
+            throw new Error('Username is required to add a medication');
+        }
+        
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([MEDICATIONS_STORE], 'readwrite');
+            const store = transaction.objectStore(MEDICATIONS_STORE);
+            
+            const med = {
+                id: generateMedicationId(),
+                name: medication.name || '',
+                dose: medication.dose || '',
+                startDate: medication.startDate || '',
+                stopDate: medication.stopDate || '',
+                notes: medication.notes || '',
+                username: username,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            const request = store.add(med);
+            
+            request.onsuccess = () => {
+                resolve(med.id);
+            };
+            
+            request.onerror = () => {
+                reject(new Error('Failed to add medication'));
+            };
+        });
+    }
+
+    /**
+     * Get a medication by ID
+     * @param {string} id - Medication ID
+     * @returns {Promise<Object|null>}
+     */
+    async function getMedication(id) {
+        await init();
+        
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([MEDICATIONS_STORE], 'readonly');
+            const store = transaction.objectStore(MEDICATIONS_STORE);
+            const request = store.get(id);
+            
+            request.onsuccess = () => {
+                resolve(request.result || null);
+            };
+            
+            request.onerror = () => {
+                reject(new Error('Failed to get medication'));
+            };
+        });
+    }
+
+    /**
+     * Get medications by username
+     * @param {string} username - Username to filter by
+     * @returns {Promise<Array>}
+     */
+    async function getMedicationsByUser(username) {
+        await init();
+        
+        if (!username) {
+            return [];
+        }
+        
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([MEDICATIONS_STORE], 'readonly');
+            const store = transaction.objectStore(MEDICATIONS_STORE);
+            const index = store.index('username');
+            const request = index.getAll(username);
+            
+            request.onsuccess = () => {
+                resolve(request.result || []);
+            };
+            
+            request.onerror = () => {
+                reject(new Error('Failed to get medications by user'));
+            };
+        });
+    }
+
+    /**
+     * Update a medication
+     * @param {string} id - Medication ID
+     * @param {Object} updates - Fields to update
+     * @returns {Promise<void>}
+     */
+    async function updateMedication(id, updates) {
+        await init();
+        
+        const med = await getMedication(id);
+        if (!med) {
+            throw new Error('Medication not found');
+        }
+        
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([MEDICATIONS_STORE], 'readwrite');
+            const store = transaction.objectStore(MEDICATIONS_STORE);
+            
+            const updatedMed = {
+                ...med,
+                ...updates,
+                updatedAt: new Date().toISOString()
+            };
+            
+            const request = store.put(updatedMed);
+            
+            request.onsuccess = () => {
+                resolve();
+            };
+            
+            request.onerror = () => {
+                reject(new Error('Failed to update medication'));
+            };
+        });
+    }
+
+    /**
+     * Delete a medication
+     * @param {string} id - Medication ID
+     * @returns {Promise<void>}
+     */
+    async function deleteMedication(id) {
+        await init();
+        
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([MEDICATIONS_STORE], 'readwrite');
+            const store = transaction.objectStore(MEDICATIONS_STORE);
+            const request = store.delete(id);
+            
+            request.onsuccess = () => {
+                resolve();
+            };
+            
+            request.onerror = () => {
+                reject(new Error('Failed to delete medication'));
+            };
+        });
+    }
+
     // Public API
     return {
         init,
@@ -476,7 +652,13 @@ const DocuDB = (function() {
         getAppointment,
         getAppointmentsByUser,
         updateAppointment,
-        deleteAppointment
+        deleteAppointment,
+        // Medications API
+        addMedication,
+        getMedication,
+        getMedicationsByUser,
+        updateMedication,
+        deleteMedication
     };
 })();
 
