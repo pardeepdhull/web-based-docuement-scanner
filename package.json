@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "pdfjs-dist": "^3.11.174",
+    "pdfjs-dist": "^4.2.67",
     "tesseract.js": "^5.1.1",
     "tesseract.js-core": "^5.1.1"
   }

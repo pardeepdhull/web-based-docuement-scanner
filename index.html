@@ -553,13 +553,11 @@
 
     <!-- Tesseract.js Local -->
     <script src="vendor/tesseract.js/tesseract.min.js"></script>
-    <!-- PDF.js Local for PDF support -->
-    <script src="vendor/pdf.min.js"></script>
-    <script>
-        // Configure PDF.js worker path
-        if (typeof pdfjsLib !== 'undefined') {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
-        }
+    <!-- PDF.js Local for PDF support (ES Module) -->
+    <script type="module">
+        import * as pdfjsLib from './vendor/pdf.min.mjs';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = './vendor/pdf.worker.min.mjs';
+        window.pdfjsLib = pdfjsLib;
     </script>
     <!-- Application Scripts -->
     <script src="js/auth.js"></script>
