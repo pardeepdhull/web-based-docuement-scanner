@@ -2274,7 +2274,7 @@ const MyMedicalDetailsApp = (function() {
 
         showConfirm(
             'Delete Medication',
-            `Are you sure you want to delete "${medication.name}"? This action cannot be undone.`,
+            `Are you sure you want to delete "${escapeHtml(medication.name)}"? This action cannot be undone.`,
             () => deleteMedicationById(id)
         );
     }
