@@ -527,6 +527,21 @@ const MyMedicalDetailsApp = (function() {
                 }
             }
         });
+        
+        // Close all popups when clicking outside (global handler, set once)
+        document.addEventListener('click', (e) => {
+            // Only close if not clicking on a menu button or inside a popup
+            if (!e.target.closest('.menu-dots') && !e.target.closest('.popup-menu')) {
+                closeAllPopups();
+            }
+        });
+    }
+    
+    /**
+     * Close all open popup menus
+     */
+    function closeAllPopups() {
+        document.querySelectorAll('.popup-menu.active').forEach(p => p.classList.remove('active'));
     }
 
     /**
@@ -962,27 +977,10 @@ const MyMedicalDetailsApp = (function() {
             const docTypeLabel = isTextPage ? 'Text Page' : 'Scanned';
             const docTypeClass = isTextPage ? 'text-page' : 'scanned-document';
             
-            // Determine match type for search results
-            let matchIndicator = '';
-            if (searchQuery) {
-                const titleMatch = doc.name.toLowerCase().includes(searchQuery);
-                const contentMatch = doc.extractedText && doc.extractedText.toLowerCase().includes(searchQuery);
-                
-                if (titleMatch && contentMatch) {
-                    matchIndicator = '<span class="match-indicator match-both">📌 Matches in title & content</span>';
-                } else if (titleMatch) {
-                    matchIndicator = '<span class="match-indicator match-title">📌 Matches in title</span>';
-                } else if (contentMatch) {
-                    matchIndicator = '<span class="match-indicator match-content">📌 Matches in content</span>';
-                }
-            }
-            
-            // For text pages, show a text preview thumbnail; for scanned docs, show image
-            const textContent = doc.extractedText || '';
+            // For text pages, show a text icon thumbnail; for scanned docs, show image
             const thumbnailHtml = isTextPage 
                 ? `<div class="text-page-thumbnail">
                        <span class="text-icon">📄</span>
-                       <span class="text-preview">${escapeHtml(textContent.substring(0, 100))}${textContent.length > 100 ? '...' : ''}</span>
                    </div>`
                 : `<img class="document-thumbnail" src="${doc.imageData}" alt="${escapeHtml(doc.name)}" loading="lazy">`;
             
@@ -992,7 +990,6 @@ const MyMedicalDetailsApp = (function() {
                     <div class="document-info">
                         <div class="document-name" title="${escapeHtml(doc.name)}">${escapeHtml(doc.name)}</div>
                         <div class="document-date">${formatDate(doc.createdAt)}</div>
-                        ${matchIndicator}
                         <span class="document-type-badge ${docTypeClass}">
                             ${docTypeIcon} ${docTypeLabel}
                         </span>
@@ -1000,13 +997,56 @@ const MyMedicalDetailsApp = (function() {
                             ${doc.processed ? '✓ Processed' : '⏳ Pending'}
                         </span>
                     </div>
+                    <button class="menu-dots" data-id="${doc.id}" aria-label="Document options" title="Options">
+                        ⋮
+                        <div class="popup-menu">
+                            <button class="popup-menu-item" data-action="view" data-id="${doc.id}">
+                                <span class="menu-icon">👁️</span>
+                                <span>View</span>
+                            </button>
+                            <button class="popup-menu-item" data-action="edit" data-id="${doc.id}">
+                                <span class="menu-icon">✏️</span>
+                                <span>Edit</span>
+                            </button>
+                        </div>
+                    </button>
                 </div>
             `;
         }).join('');
         
-        // Add click handlers
-        grid.querySelectorAll('.document-card').forEach(card => {
-            card.addEventListener('click', () => openViewer(card.dataset.id));
+        // Add click handlers for menu dots
+        grid.querySelectorAll('.menu-dots').forEach(menuBtn => {
+            menuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const popup = menuBtn.querySelector('.popup-menu');
+                const isActive = popup.classList.contains('active');
+                
+                // Close all other popups
+                closeAllPopups();
+                
+                // Toggle current popup
+                if (!isActive) {
+                    popup.classList.add('active');
+                }
+            });
+        });
+        
+        // Add click handlers for popup menu items
+        grid.querySelectorAll('.popup-menu-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const action = item.dataset.action;
+                const docId = item.dataset.id;
+                
+                // Close all popups
+                closeAllPopups();
+                
+                if (action === 'view') {
+                    openViewerInViewMode(docId);
+                } else if (action === 'edit') {
+                    openViewer(docId);
+                }
+            });
         });
     }
 
@@ -1127,15 +1167,33 @@ const MyMedicalDetailsApp = (function() {
     }
 
     /**
+     * Open document viewer in view-only mode
+     * @param {string} docId - Document ID
+     */
+    async function openViewerInViewMode(docId) {
+        await openViewer(docId);
+        // In view mode, disable editing controls
+        elements.textContent.contentEditable = 'false';
+        elements.editTextBtn.style.display = 'none';
+        elements.saveTextBtn.style.display = 'none';
+        elements.deleteDocBtn.style.display = 'none';
+        elements.reprocessBtn.style.display = 'none';
+    }
+
+    /**
      * Close document viewer
      */
     function closeViewer() {
         elements.viewerModal.classList.add('hidden');
         currentDocumentId = null;
         
-        // Reset edit state
+        // Reset edit state and controls visibility
         isEditing = false;
         elements.textContent.contentEditable = 'false';
+        elements.editTextBtn.style.removeProperty('display');
+        elements.saveTextBtn.style.removeProperty('display');
+        elements.deleteDocBtn.style.removeProperty('display');
+        elements.reprocessBtn.style.removeProperty('display');
     }
 
     /**
@@ -1884,10 +1942,25 @@ const MyMedicalDetailsApp = (function() {
             const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
             
             return `
-                <div class="appointment-card" onclick="MyMedicalDetailsApp.editAppointment('${appt.id}')">
+                <div class="appointment-card">
                     <div class="appointment-card-header">
-                        <h3 class="appointment-title">${escapeHtml(appt.title)}</h3>
-                        ${appt.category ? `<span class="appointment-category">${escapeHtml(appt.category)}</span>` : ''}
+                        <div class="appointment-card-main">
+                            <h3 class="appointment-title">${escapeHtml(appt.title)}</h3>
+                            ${appt.category ? `<span class="appointment-category">${escapeHtml(appt.category)}</span>` : ''}
+                        </div>
+                        <button class="menu-dots" data-id="${appt.id}" aria-label="Appointment options" title="Options">
+                            ⋮
+                            <div class="popup-menu">
+                                <button class="popup-menu-item" data-action="view" data-id="${appt.id}">
+                                    <span class="menu-icon">👁️</span>
+                                    <span>View</span>
+                                </button>
+                                <button class="popup-menu-item" data-action="edit" data-id="${appt.id}">
+                                    <span class="menu-icon">✏️</span>
+                                    <span>Edit</span>
+                                </button>
+                            </div>
+                        </button>
                     </div>
                     <div class="appointment-datetime">
                         <span>📅</span> ${dateStr} at ${timeStr}
@@ -1900,13 +1973,44 @@ const MyMedicalDetailsApp = (function() {
                     ${appt.description ? `
                         <div class="appointment-description">${escapeHtml(appt.description)}</div>
                     ` : ''}
-                    <div class="appointment-actions">
-                        <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); MyMedicalDetailsApp.editAppointment('${appt.id}')">✏️ Edit</button>
-                        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); MyMedicalDetailsApp.confirmDeleteAppointment('${appt.id}')">🗑️ Delete</button>
-                    </div>
                 </div>
             `;
         }).join('');
+        
+        // Add event listeners for menu buttons
+        elements.appointmentsList.querySelectorAll('.menu-dots').forEach(menuBtn => {
+            menuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const popup = menuBtn.querySelector('.popup-menu');
+                const isActive = popup.classList.contains('active');
+                
+                // Close all other popups
+                closeAllPopups();
+                
+                // Toggle current popup
+                if (!isActive) {
+                    popup.classList.add('active');
+                }
+            });
+        });
+        
+        // Add event listeners for popup menu items
+        elements.appointmentsList.querySelectorAll('.popup-menu-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const action = item.dataset.action;
+                const apptId = item.dataset.id;
+                
+                // Close all popups
+                closeAllPopups();
+                
+                if (action === 'view') {
+                    openAppointmentModalInViewMode(apptId);
+                } else if (action === 'edit') {
+                    editAppointment(apptId);
+                }
+            });
+        });
     }
 
     /**
@@ -1944,6 +2048,55 @@ const MyMedicalDetailsApp = (function() {
             elements.appointmentDate.value = today.toISOString().split('T')[0];
         }
         
+        // Enable all form fields
+        elements.appointmentTitle.disabled = false;
+        elements.appointmentDate.disabled = false;
+        elements.appointmentTime.disabled = false;
+        elements.appointmentLocation.disabled = false;
+        elements.appointmentCategory.disabled = false;
+        elements.appointmentDescription.disabled = false;
+        elements.appointmentReminder.disabled = false;
+        elements.saveAppointmentBtn.style.removeProperty('display');
+        
+        elements.appointmentModal.classList.remove('hidden');
+    }
+
+    /**
+     * Open appointment modal in view-only mode
+     * @param {string} id - Appointment ID
+     */
+    function openAppointmentModalInViewMode(id) {
+        if (!elements.appointmentModal) return;
+        
+        const appt = appointments.find(a => a.id === id);
+        if (!appt) {
+            showToast('Appointment not found', 'error');
+            return;
+        }
+        
+        currentAppointmentId = id;
+        elements.appointmentModalTitle.textContent = 'View Appointment';
+        elements.appointmentTitle.value = appt.title;
+        
+        const date = new Date(appt.dateTime);
+        elements.appointmentDate.value = date.toISOString().split('T')[0];
+        elements.appointmentTime.value = date.toTimeString().slice(0, 5);
+        
+        elements.appointmentLocation.value = appt.location || '';
+        elements.appointmentCategory.value = appt.category || '';
+        elements.appointmentDescription.value = appt.description || '';
+        elements.appointmentReminder.value = appt.reminder || 'none';
+        
+        // Disable all form fields for view mode
+        elements.appointmentTitle.disabled = true;
+        elements.appointmentDate.disabled = true;
+        elements.appointmentTime.disabled = true;
+        elements.appointmentLocation.disabled = true;
+        elements.appointmentCategory.disabled = true;
+        elements.appointmentDescription.disabled = true;
+        elements.appointmentReminder.disabled = true;
+        elements.saveAppointmentBtn.style.display = 'none';
+        
         elements.appointmentModal.classList.remove('hidden');
     }
 
@@ -1956,6 +2109,16 @@ const MyMedicalDetailsApp = (function() {
         elements.appointmentModal.classList.add('hidden');
         elements.appointmentForm.reset();
         currentAppointmentId = null;
+        
+        // Re-enable form fields
+        elements.appointmentTitle.disabled = false;
+        elements.appointmentDate.disabled = false;
+        elements.appointmentTime.disabled = false;
+        elements.appointmentLocation.disabled = false;
+        elements.appointmentCategory.disabled = false;
+        elements.appointmentDescription.disabled = false;
+        elements.appointmentReminder.disabled = false;
+        elements.saveAppointmentBtn.style.removeProperty('display');
     }
 
     /**
@@ -2127,18 +2290,58 @@ const MyMedicalDetailsApp = (function() {
                             </div>
                             ${med.notes ? `<div class="medication-card-notes">${escapeHtml(med.notes)}</div>` : ''}
                         </div>
-                        <div class="medication-actions">
-                            <button class="btn btn-sm btn-secondary" onclick="MyMedicalDetailsApp.editMedication('${med.id}')" title="Edit">
-                                ✏️
-                            </button>
-                            <button class="btn btn-sm btn-danger" onclick="MyMedicalDetailsApp.confirmDeleteMedication('${med.id}')" title="Delete">
-                                🗑️
-                            </button>
-                        </div>
+                        <button class="menu-dots" data-id="${med.id}" aria-label="Medication options" title="Options">
+                            ⋮
+                            <div class="popup-menu">
+                                <button class="popup-menu-item" data-action="view" data-id="${med.id}">
+                                    <span class="menu-icon">👁️</span>
+                                    <span>View</span>
+                                </button>
+                                <button class="popup-menu-item" data-action="edit" data-id="${med.id}">
+                                    <span class="menu-icon">✏️</span>
+                                    <span>Edit</span>
+                                </button>
+                            </div>
+                        </button>
                     </div>
                 </div>
             `;
         }).join('');
+        
+        // Add event listeners for menu buttons
+        elements.medicationsList.querySelectorAll('.menu-dots').forEach(menuBtn => {
+            menuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const popup = menuBtn.querySelector('.popup-menu');
+                const isActive = popup.classList.contains('active');
+                
+                // Close all other popups
+                closeAllPopups();
+                
+                // Toggle current popup
+                if (!isActive) {
+                    popup.classList.add('active');
+                }
+            });
+        });
+        
+        // Add event listeners for popup menu items
+        elements.medicationsList.querySelectorAll('.popup-menu-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const action = item.dataset.action;
+                const medId = item.dataset.id;
+                
+                // Close all popups
+                closeAllPopups();
+                
+                if (action === 'view') {
+                    openMedicationModalInViewMode(medId);
+                } else if (action === 'edit') {
+                    editMedication(medId);
+                }
+            });
+        });
     }
 
     /**
@@ -2177,8 +2380,48 @@ const MyMedicalDetailsApp = (function() {
             elements.medicationForm.reset();
         }
 
+        // Enable all form fields
+        elements.medicationName.disabled = false;
+        elements.medicationDose.disabled = false;
+        elements.medicationStartDate.disabled = false;
+        elements.medicationStopDate.disabled = false;
+        elements.medicationNotes.disabled = false;
+        elements.saveMedicationBtn.style.removeProperty('display');
+
         elements.medicationModal.classList.remove('hidden');
         elements.medicationName.focus();
+    }
+
+    /**
+     * Open medication modal in view-only mode
+     * @param {string} id - Medication ID
+     */
+    function openMedicationModalInViewMode(id) {
+        if (!elements.medicationModal) return;
+
+        const medication = medications.find(m => m.id === id);
+        if (!medication) {
+            showToast('Medication not found', 'error');
+            return;
+        }
+
+        currentMedicationId = id;
+        elements.medicationModalTitle.textContent = 'View Medication';
+        elements.medicationName.value = medication.name || '';
+        elements.medicationDose.value = medication.dose || '';
+        elements.medicationStartDate.value = medication.startDate || '';
+        elements.medicationStopDate.value = medication.stopDate || '';
+        elements.medicationNotes.value = medication.notes || '';
+
+        // Disable all form fields for view mode
+        elements.medicationName.disabled = true;
+        elements.medicationDose.disabled = true;
+        elements.medicationStartDate.disabled = true;
+        elements.medicationStopDate.disabled = true;
+        elements.medicationNotes.disabled = true;
+        elements.saveMedicationBtn.style.display = 'none';
+
+        elements.medicationModal.classList.remove('hidden');
     }
 
     /**
@@ -2190,6 +2433,14 @@ const MyMedicalDetailsApp = (function() {
         elements.medicationModal.classList.add('hidden');
         elements.medicationForm.reset();
         currentMedicationId = null;
+
+        // Re-enable form fields
+        elements.medicationName.disabled = false;
+        elements.medicationDose.disabled = false;
+        elements.medicationStartDate.disabled = false;
+        elements.medicationStopDate.disabled = false;
+        elements.medicationNotes.disabled = false;
+        elements.saveMedicationBtn.style.removeProperty('display');
     }
 
     /**
