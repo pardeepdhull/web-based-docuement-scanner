@@ -1000,14 +1000,14 @@ const MyMedicalDetailsApp = (function() {
                     <button class="menu-dots" data-id="${doc.id}" aria-label="Document options" title="Options">
                         ⋮
                         <div class="popup-menu">
-                            <button class="popup-menu-item" data-action="view" data-id="${doc.id}">
+                            <div class="popup-menu-item" role="button" tabindex="0" data-action="view" data-id="${doc.id}">
                                 <span class="menu-icon">👁️</span>
                                 <span>View</span>
-                            </button>
-                            <button class="popup-menu-item" data-action="edit" data-id="${doc.id}">
+                            </div>
+                            <div class="popup-menu-item" role="button" tabindex="0" data-action="edit" data-id="${doc.id}">
                                 <span class="menu-icon">✏️</span>
                                 <span>Edit</span>
-                            </button>
+                            </div>
                         </div>
                     </button>
                 </div>
@@ -1033,7 +1033,7 @@ const MyMedicalDetailsApp = (function() {
         
         // Add click handlers for popup menu items
         grid.querySelectorAll('.popup-menu-item').forEach(item => {
-            item.addEventListener('click', (e) => {
+            const handleAction = (e) => {
                 e.stopPropagation();
                 const action = item.dataset.action;
                 const docId = item.dataset.id;
@@ -1045,6 +1045,16 @@ const MyMedicalDetailsApp = (function() {
                     openViewerInViewMode(docId);
                 } else if (action === 'edit') {
                     openViewer(docId);
+                }
+            };
+            
+            item.addEventListener('click', handleAction);
+            
+            // Add keyboard support for Enter and Space keys
+            item.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleAction(e);
                 }
             });
         });
@@ -1951,14 +1961,14 @@ const MyMedicalDetailsApp = (function() {
                         <button class="menu-dots" data-id="${appt.id}" aria-label="Appointment options" title="Options">
                             ⋮
                             <div class="popup-menu">
-                                <button class="popup-menu-item" data-action="view" data-id="${appt.id}">
+                                <div class="popup-menu-item" role="button" tabindex="0" data-action="view" data-id="${appt.id}">
                                     <span class="menu-icon">👁️</span>
                                     <span>View</span>
-                                </button>
-                                <button class="popup-menu-item" data-action="edit" data-id="${appt.id}">
+                                </div>
+                                <div class="popup-menu-item" role="button" tabindex="0" data-action="edit" data-id="${appt.id}">
                                     <span class="menu-icon">✏️</span>
                                     <span>Edit</span>
-                                </button>
+                                </div>
                             </div>
                         </button>
                     </div>
@@ -1996,7 +2006,7 @@ const MyMedicalDetailsApp = (function() {
         
         // Add event listeners for popup menu items
         elements.appointmentsList.querySelectorAll('.popup-menu-item').forEach(item => {
-            item.addEventListener('click', (e) => {
+            const handleAction = (e) => {
                 e.stopPropagation();
                 const action = item.dataset.action;
                 const apptId = item.dataset.id;
@@ -2008,6 +2018,16 @@ const MyMedicalDetailsApp = (function() {
                     openAppointmentModalInViewMode(apptId);
                 } else if (action === 'edit') {
                     editAppointment(apptId);
+                }
+            };
+            
+            item.addEventListener('click', handleAction);
+            
+            // Add keyboard support for Enter and Space keys
+            item.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleAction(e);
                 }
             });
         });
@@ -2293,14 +2313,14 @@ const MyMedicalDetailsApp = (function() {
                         <button class="menu-dots" data-id="${med.id}" aria-label="Medication options" title="Options">
                             ⋮
                             <div class="popup-menu">
-                                <button class="popup-menu-item" data-action="view" data-id="${med.id}">
+                                <div class="popup-menu-item" role="button" tabindex="0" data-action="view" data-id="${med.id}">
                                     <span class="menu-icon">👁️</span>
                                     <span>View</span>
-                                </button>
-                                <button class="popup-menu-item" data-action="edit" data-id="${med.id}">
+                                </div>
+                                <div class="popup-menu-item" role="button" tabindex="0" data-action="edit" data-id="${med.id}">
                                     <span class="menu-icon">✏️</span>
                                     <span>Edit</span>
-                                </button>
+                                </div>
                             </div>
                         </button>
                     </div>
@@ -2327,7 +2347,7 @@ const MyMedicalDetailsApp = (function() {
         
         // Add event listeners for popup menu items
         elements.medicationsList.querySelectorAll('.popup-menu-item').forEach(item => {
-            item.addEventListener('click', (e) => {
+            const handleAction = (e) => {
                 e.stopPropagation();
                 const action = item.dataset.action;
                 const medId = item.dataset.id;
@@ -2339,6 +2359,16 @@ const MyMedicalDetailsApp = (function() {
                     openMedicationModalInViewMode(medId);
                 } else if (action === 'edit') {
                     editMedication(medId);
+                }
+            };
+            
+            item.addEventListener('click', handleAction);
+            
+            // Add keyboard support for Enter and Space keys
+            item.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleAction(e);
                 }
             });
         });
