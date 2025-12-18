@@ -78,21 +78,21 @@
                 <span class="brand-name">My Medical Details</span>
             </div>
             <div class="nav-links">
-                <button class="nav-btn active" data-view="scan">
-                    <span class="nav-icon">📷</span>
-                    <span class="nav-text">Add Documents</span>
-                </button>
-                <button class="nav-btn" data-view="documents">
-                    <span class="nav-icon">📁</span>
-                    <span class="nav-text">List of documents</span>
+                <button class="nav-btn active" data-view="medications">
+                    <span class="nav-icon">💊</span>
+                    <span class="nav-text">My Medication List</span>
                 </button>
                 <button class="nav-btn" data-view="appointments">
                     <span class="nav-icon">📅</span>
                     <span class="nav-text">Appointments</span>
                 </button>
-                <button class="nav-btn" data-view="medications">
-                    <span class="nav-icon">💊</span>
-                    <span class="nav-text">My Medication List</span>
+                <button class="nav-btn" data-view="documents">
+                    <span class="nav-icon">📁</span>
+                    <span class="nav-text">My Documents</span>
+                </button>
+                <button class="nav-btn" data-view="scan">
+                    <span class="nav-icon">📷</span>
+                    <span class="nav-text">Add Documents</span>
                 </button>
                 <button class="nav-btn hidden" id="user-management-nav-btn" data-view="users">
                     <span class="nav-icon">👥</span>
@@ -111,7 +111,7 @@
     <!-- Main Content -->
     <main class="main-content">
         <!-- Scan View -->
-        <section id="scan-view" class="view active">
+        <section id="scan-view" class="view">
             <div class="view-header">
                 <h1>Add Document</h1>
                 <p>Scan a document using your camera or upload an existing image</p>
@@ -313,7 +313,7 @@
         </section>
 
         <!-- Medications View -->
-        <section id="medications-view" class="view">
+        <section id="medications-view" class="view active">
             <div class="view-header">
                 <h1>My Medication List</h1>
                 <p>Manage your medications and dosages</p>
