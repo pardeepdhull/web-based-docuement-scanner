@@ -1,0 +1,17 @@
+{
+  "name": "web-based-docuement-scanner",
+  "version": "1.0.0",
+  "description": "A complete web-based document scanning and OCR (Optical Character Recognition) application that runs entirely in the browser without requiring any software installation.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "pdfjs-dist": "^4.2.67",
+    "tesseract.js": "^5.1.1",
+    "tesseract.js-core": "^5.1.1"
+  }
+}
