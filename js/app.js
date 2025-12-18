@@ -1024,7 +1024,13 @@ const MyMedicalDetailsApp = (function() {
                 const docId = item.dataset.id;
                 
                 // Close popup
-                item.closest('.popup-menu').classList.remove('active');
+                const popup = item.closest('.popup-menu');
+                if (popup) {
+                    popup.classList.remove('active');
+                }
+                
+                // Close all popups to be safe
+                document.querySelectorAll('.popup-menu.active').forEach(p => p.classList.remove('active'));
                 
                 if (action === 'view') {
                     openViewerInViewMode(docId);
@@ -1992,7 +1998,13 @@ const MyMedicalDetailsApp = (function() {
                 const apptId = item.dataset.id;
                 
                 // Close popup
-                item.closest('.popup-menu').classList.remove('active');
+                const popup = item.closest('.popup-menu');
+                if (popup) {
+                    popup.classList.remove('active');
+                }
+                
+                // Close all popups to be safe
+                document.querySelectorAll('.popup-menu.active').forEach(p => p.classList.remove('active'));
                 
                 if (action === 'view') {
                     openAppointmentModalInViewMode(apptId);
@@ -2323,7 +2335,13 @@ const MyMedicalDetailsApp = (function() {
                 const medId = item.dataset.id;
                 
                 // Close popup
-                item.closest('.popup-menu').classList.remove('active');
+                const popup = item.closest('.popup-menu');
+                if (popup) {
+                    popup.classList.remove('active');
+                }
+                
+                // Close all popups to be safe
+                document.querySelectorAll('.popup-menu.active').forEach(p => p.classList.remove('active'));
                 
                 if (action === 'view') {
                     openMedicationModalInViewMode(medId);
