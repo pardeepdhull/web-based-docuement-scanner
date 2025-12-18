@@ -527,6 +527,21 @@ const MyMedicalDetailsApp = (function() {
                 }
             }
         });
+        
+        // Close all popups when clicking outside (global handler, set once)
+        document.addEventListener('click', (e) => {
+            // Only close if not clicking on a menu button or inside a popup
+            if (!e.target.closest('.menu-dots') && !e.target.closest('.popup-menu')) {
+                closeAllPopups();
+            }
+        });
+    }
+    
+    /**
+     * Close all open popup menus
+     */
+    function closeAllPopups() {
+        document.querySelectorAll('.popup-menu.active').forEach(p => p.classList.remove('active'));
     }
 
     /**
@@ -1007,7 +1022,7 @@ const MyMedicalDetailsApp = (function() {
                 const isActive = popup.classList.contains('active');
                 
                 // Close all other popups
-                document.querySelectorAll('.popup-menu.active').forEach(p => p.classList.remove('active'));
+                closeAllPopups();
                 
                 // Toggle current popup
                 if (!isActive) {
@@ -1023,14 +1038,8 @@ const MyMedicalDetailsApp = (function() {
                 const action = item.dataset.action;
                 const docId = item.dataset.id;
                 
-                // Close popup
-                const popup = item.closest('.popup-menu');
-                if (popup) {
-                    popup.classList.remove('active');
-                }
-                
-                // Close all popups to be safe
-                document.querySelectorAll('.popup-menu.active').forEach(p => p.classList.remove('active'));
+                // Close all popups
+                closeAllPopups();
                 
                 if (action === 'view') {
                     openViewerInViewMode(docId);
@@ -1038,11 +1047,6 @@ const MyMedicalDetailsApp = (function() {
                     openViewer(docId);
                 }
             });
-        });
-        
-        // Close popups when clicking outside
-        document.addEventListener('click', () => {
-            document.querySelectorAll('.popup-menu.active').forEach(p => p.classList.remove('active'));
         });
     }
 
@@ -1186,10 +1190,10 @@ const MyMedicalDetailsApp = (function() {
         // Reset edit state and controls visibility
         isEditing = false;
         elements.textContent.contentEditable = 'false';
-        elements.editTextBtn.style.display = '';
-        elements.saveTextBtn.style.display = '';
-        elements.deleteDocBtn.style.display = '';
-        elements.reprocessBtn.style.display = '';
+        elements.editTextBtn.style.removeProperty('display');
+        elements.saveTextBtn.style.removeProperty('display');
+        elements.deleteDocBtn.style.removeProperty('display');
+        elements.reprocessBtn.style.removeProperty('display');
     }
 
     /**
@@ -1981,7 +1985,7 @@ const MyMedicalDetailsApp = (function() {
                 const isActive = popup.classList.contains('active');
                 
                 // Close all other popups
-                document.querySelectorAll('.popup-menu.active').forEach(p => p.classList.remove('active'));
+                closeAllPopups();
                 
                 // Toggle current popup
                 if (!isActive) {
@@ -1997,14 +2001,8 @@ const MyMedicalDetailsApp = (function() {
                 const action = item.dataset.action;
                 const apptId = item.dataset.id;
                 
-                // Close popup
-                const popup = item.closest('.popup-menu');
-                if (popup) {
-                    popup.classList.remove('active');
-                }
-                
-                // Close all popups to be safe
-                document.querySelectorAll('.popup-menu.active').forEach(p => p.classList.remove('active'));
+                // Close all popups
+                closeAllPopups();
                 
                 if (action === 'view') {
                     openAppointmentModalInViewMode(apptId);
@@ -2058,7 +2056,7 @@ const MyMedicalDetailsApp = (function() {
         elements.appointmentCategory.disabled = false;
         elements.appointmentDescription.disabled = false;
         elements.appointmentReminder.disabled = false;
-        elements.saveAppointmentBtn.style.display = '';
+        elements.saveAppointmentBtn.style.removeProperty('display');
         
         elements.appointmentModal.classList.remove('hidden');
     }
@@ -2120,7 +2118,7 @@ const MyMedicalDetailsApp = (function() {
         elements.appointmentCategory.disabled = false;
         elements.appointmentDescription.disabled = false;
         elements.appointmentReminder.disabled = false;
-        elements.saveAppointmentBtn.style.display = '';
+        elements.saveAppointmentBtn.style.removeProperty('display');
     }
 
     /**
@@ -2318,7 +2316,7 @@ const MyMedicalDetailsApp = (function() {
                 const isActive = popup.classList.contains('active');
                 
                 // Close all other popups
-                document.querySelectorAll('.popup-menu.active').forEach(p => p.classList.remove('active'));
+                closeAllPopups();
                 
                 // Toggle current popup
                 if (!isActive) {
@@ -2334,14 +2332,8 @@ const MyMedicalDetailsApp = (function() {
                 const action = item.dataset.action;
                 const medId = item.dataset.id;
                 
-                // Close popup
-                const popup = item.closest('.popup-menu');
-                if (popup) {
-                    popup.classList.remove('active');
-                }
-                
-                // Close all popups to be safe
-                document.querySelectorAll('.popup-menu.active').forEach(p => p.classList.remove('active'));
+                // Close all popups
+                closeAllPopups();
                 
                 if (action === 'view') {
                     openMedicationModalInViewMode(medId);
@@ -2394,7 +2386,7 @@ const MyMedicalDetailsApp = (function() {
         elements.medicationStartDate.disabled = false;
         elements.medicationStopDate.disabled = false;
         elements.medicationNotes.disabled = false;
-        elements.saveMedicationBtn.style.display = '';
+        elements.saveMedicationBtn.style.removeProperty('display');
 
         elements.medicationModal.classList.remove('hidden');
         elements.medicationName.focus();
@@ -2448,7 +2440,7 @@ const MyMedicalDetailsApp = (function() {
         elements.medicationStartDate.disabled = false;
         elements.medicationStopDate.disabled = false;
         elements.medicationNotes.disabled = false;
-        elements.saveMedicationBtn.style.display = '';
+        elements.saveMedicationBtn.style.removeProperty('display');
     }
 
     /**
