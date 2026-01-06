@@ -998,7 +998,7 @@ const MyMedicalDetailsApp = (function() {
                         </span>
                     </div>
                     <button class="menu-dots" data-id="${doc.id}" aria-label="Document options" title="Options">
-                        ⋮
+                        <span class="material-symbols-outlined">more_vert</span>
                         <div class="popup-menu">
                             <div class="popup-menu-item" role="button" tabindex="0" data-action="view" data-id="${doc.id}">
                                 <span class="material-symbols-outlined menu-icon">visibility</span>
@@ -1959,7 +1959,7 @@ const MyMedicalDetailsApp = (function() {
                             ${appt.category ? `<span class="appointment-category">${escapeHtml(appt.category)}</span>` : ''}
                         </div>
                         <button class="menu-dots" data-id="${appt.id}" aria-label="Appointment options" title="Options">
-                            ⋮
+                            <span class="material-symbols-outlined">more_vert</span>
                             <div class="popup-menu">
                                 <div class="popup-menu-item" role="button" tabindex="0" data-action="view" data-id="${appt.id}">
                                     <span class="material-symbols-outlined menu-icon">visibility</span>
@@ -2311,7 +2311,7 @@ const MyMedicalDetailsApp = (function() {
                             ${med.notes ? `<div class="medication-card-notes">${escapeHtml(med.notes)}</div>` : ''}
                         </div>
                         <button class="menu-dots" data-id="${med.id}" aria-label="Medication options" title="Options">
-                            ⋮
+                            <span class="material-symbols-outlined">more_vert</span>
                             <div class="popup-menu">
                                 <div class="popup-menu-item" role="button" tabindex="0" data-action="view" data-id="${med.id}">
                                     <span class="material-symbols-outlined menu-icon">visibility</span>
