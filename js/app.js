@@ -973,14 +973,14 @@ const MyMedicalDetailsApp = (function() {
         
         grid.innerHTML = filteredDocs.map(doc => {
             const isTextPage = doc.type === 'text-page';
-            const docTypeIcon = isTextPage ? '📝' : '📷';
+            const docTypeIcon = isTextPage ? 'edit_note' : 'photo_camera';
             const docTypeLabel = isTextPage ? 'Text Page' : 'Scanned';
             const docTypeClass = isTextPage ? 'text-page' : 'scanned-document';
             
             // For text pages, show a text icon thumbnail; for scanned docs, show image
             const thumbnailHtml = isTextPage 
                 ? `<div class="text-page-thumbnail">
-                       <span class="text-icon">📄</span>
+                       <span class="material-symbols-outlined text-icon">description</span>
                    </div>`
                 : `<img class="document-thumbnail" src="${doc.imageData}" alt="${escapeHtml(doc.name)}" loading="lazy">`;
             
@@ -991,21 +991,21 @@ const MyMedicalDetailsApp = (function() {
                         <div class="document-name" title="${escapeHtml(doc.name)}">${escapeHtml(doc.name)}</div>
                         <div class="document-date">${formatDate(doc.createdAt)}</div>
                         <span class="document-type-badge ${docTypeClass}">
-                            ${docTypeIcon} ${docTypeLabel}
+                            <span class="material-symbols-outlined">${docTypeIcon}</span> ${docTypeLabel}
                         </span>
                         <span class="document-status ${doc.processed ? 'processed' : 'pending'}">
-                            ${doc.processed ? '✓ Processed' : '⏳ Pending'}
+                            ${doc.processed ? '<span class="material-symbols-outlined">check_circle</span> Processed' : '<span class="material-symbols-outlined">schedule</span> Pending'}
                         </span>
                     </div>
                     <button class="menu-dots" data-id="${doc.id}" aria-label="Document options" title="Options">
-                        ⋮
+                        <span class="material-symbols-outlined">more_vert</span>
                         <div class="popup-menu">
                             <div class="popup-menu-item" role="button" tabindex="0" data-action="view" data-id="${doc.id}">
-                                <span class="menu-icon">👁️</span>
+                                <span class="material-symbols-outlined menu-icon">visibility</span>
                                 <span>View</span>
                             </div>
                             <div class="popup-menu-item" role="button" tabindex="0" data-action="edit" data-id="${doc.id}">
-                                <span class="menu-icon">✏️</span>
+                                <span class="material-symbols-outlined menu-icon">edit</span>
                                 <span>Edit</span>
                             </div>
                         </div>
@@ -1165,7 +1165,7 @@ const MyMedicalDetailsApp = (function() {
             // Reset edit state
             isEditing = false;
             elements.textContent.contentEditable = 'false';
-            elements.editTextBtn.textContent = '✏️ Edit';
+            elements.editTextBtn.innerHTML = '<span class="material-symbols-outlined">edit</span> Edit';
             elements.saveTextBtn.disabled = true;
             
             // Show modal
@@ -1226,7 +1226,7 @@ const MyMedicalDetailsApp = (function() {
     function toggleEdit() {
         isEditing = !isEditing;
         elements.textContent.contentEditable = isEditing ? 'true' : 'false';
-        elements.editTextBtn.textContent = isEditing ? '📝 Editing' : '✏️ Edit';
+        elements.editTextBtn.innerHTML = isEditing ? '<span class="material-symbols-outlined">edit_note</span> Editing' : '<span class="material-symbols-outlined">edit</span> Edit';
         
         if (isEditing) {
             elements.textContent.focus();
@@ -1390,7 +1390,7 @@ const MyMedicalDetailsApp = (function() {
             elements.saveTextBtn.disabled = true;
             isEditing = false;
             elements.textContent.contentEditable = 'false';
-            elements.editTextBtn.textContent = '✏️ Edit';
+            elements.editTextBtn.innerHTML = '<span class="material-symbols-outlined">edit</span> Edit';
             
             showToast('Changes saved successfully!', 'success');
         } catch (error) {
@@ -1455,17 +1455,17 @@ const MyMedicalDetailsApp = (function() {
      */
     function showToast(message, type = 'success') {
         const icons = {
-            success: '✓',
-            error: '✕',
-            warning: '⚠'
+            success: 'check_circle',
+            error: 'cancel',
+            warning: 'warning'
         };
         
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
         toast.innerHTML = `
-            <span class="toast-icon">${icons[type]}</span>
+            <span class="material-symbols-outlined toast-icon">${icons[type]}</span>
             <span class="toast-message">${escapeHtml(message)}</span>
-            <button class="toast-close">&times;</button>
+            <button class="toast-close"><span class="material-symbols-outlined">close</span></button>
         `;
         
         elements.toastContainer.appendChild(toast);
@@ -1565,10 +1565,10 @@ const MyMedicalDetailsApp = (function() {
         list.innerHTML = users.map(user => {
             const statusClass = user.isActive ? 'active' : 'inactive';
             const statusText = user.isActive ? 'Active' : 'Inactive';
-            const statusIcon = user.isActive ? '✓' : '✕';
+            const statusIcon = user.isActive ? 'check_circle' : 'cancel';
             const toggleText = user.isActive ? 'Deactivate' : 'Activate';
             const roleText = user.isAdmin ? 'Admin' : 'User';
-            const roleBadge = user.isAdmin ? '<span class="role-badge admin">👑 Admin</span>' : '<span class="role-badge user">👤 User</span>';
+            const roleBadge = user.isAdmin ? '<span class="role-badge admin"><span class="material-symbols-outlined">shield_person</span> Admin</span>' : '<span class="role-badge user"><span class="material-symbols-outlined">person</span> User</span>';
             
             return `
                 <div class="user-card">
@@ -1577,7 +1577,7 @@ const MyMedicalDetailsApp = (function() {
                             <h3 class="user-name">${escapeHtml(user.username)}</h3>
                             ${roleBadge}
                             <span class="user-status ${statusClass}">
-                                ${statusIcon} ${statusText}
+                                <span class="material-symbols-outlined">${statusIcon}</span> ${statusText}
                             </span>
                         </div>
                         ${user.createdAt ? `<p class="user-date">Joined: ${formatDate(user.createdAt)}</p>` : ''}
@@ -1587,7 +1587,7 @@ const MyMedicalDetailsApp = (function() {
                             ${toggleText}
                         </button>
                         <button class="btn btn-sm btn-danger" onclick="MyMedicalDetailsApp.confirmDeleteUser('${escapeHtml(user.username)}')">
-                            🗑️ Delete
+                            <span class="material-symbols-outlined">delete</span> Delete
                         </button>
                     </div>
                 </div>
@@ -1959,25 +1959,25 @@ const MyMedicalDetailsApp = (function() {
                             ${appt.category ? `<span class="appointment-category">${escapeHtml(appt.category)}</span>` : ''}
                         </div>
                         <button class="menu-dots" data-id="${appt.id}" aria-label="Appointment options" title="Options">
-                            ⋮
+                            <span class="material-symbols-outlined">more_vert</span>
                             <div class="popup-menu">
                                 <div class="popup-menu-item" role="button" tabindex="0" data-action="view" data-id="${appt.id}">
-                                    <span class="menu-icon">👁️</span>
+                                    <span class="material-symbols-outlined menu-icon">visibility</span>
                                     <span>View</span>
                                 </div>
                                 <div class="popup-menu-item" role="button" tabindex="0" data-action="edit" data-id="${appt.id}">
-                                    <span class="menu-icon">✏️</span>
+                                    <span class="material-symbols-outlined menu-icon">edit</span>
                                     <span>Edit</span>
                                 </div>
                             </div>
                         </button>
                     </div>
                     <div class="appointment-datetime">
-                        <span>📅</span> ${dateStr} at ${timeStr}
+                        <span class="material-symbols-outlined">calendar_month</span> ${dateStr} at ${timeStr}
                     </div>
                     ${appt.location ? `
                         <div class="appointment-location">
-                            <span>📍</span> ${escapeHtml(appt.location)}
+                            <span class="material-symbols-outlined">location_on</span> ${escapeHtml(appt.location)}
                         </div>
                     ` : ''}
                     ${appt.description ? `
@@ -2311,14 +2311,14 @@ const MyMedicalDetailsApp = (function() {
                             ${med.notes ? `<div class="medication-card-notes">${escapeHtml(med.notes)}</div>` : ''}
                         </div>
                         <button class="menu-dots" data-id="${med.id}" aria-label="Medication options" title="Options">
-                            ⋮
+                            <span class="material-symbols-outlined">more_vert</span>
                             <div class="popup-menu">
                                 <div class="popup-menu-item" role="button" tabindex="0" data-action="view" data-id="${med.id}">
-                                    <span class="menu-icon">👁️</span>
+                                    <span class="material-symbols-outlined menu-icon">visibility</span>
                                     <span>View</span>
                                 </div>
                                 <div class="popup-menu-item" role="button" tabindex="0" data-action="edit" data-id="${med.id}">
-                                    <span class="menu-icon">✏️</span>
+                                    <span class="material-symbols-outlined menu-icon">edit</span>
                                     <span>Edit</span>
                                 </div>
                             </div>

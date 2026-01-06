@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "material-symbols": "^0.40.2",
     "pdfjs-dist": "^4.2.67",
     "tesseract.js": "^5.1.1",
     "tesseract.js-core": "^5.1.1"
