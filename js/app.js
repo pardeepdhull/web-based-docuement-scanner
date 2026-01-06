@@ -1465,7 +1465,7 @@ const MyMedicalDetailsApp = (function() {
         toast.innerHTML = `
             <span class="material-symbols-outlined toast-icon">${icons[type]}</span>
             <span class="toast-message">${escapeHtml(message)}</span>
-            <button class="toast-close">&times;</button>
+            <button class="toast-close"><span class="material-symbols-outlined">close</span></button>
         `;
         
         elements.toastContainer.appendChild(toast);
