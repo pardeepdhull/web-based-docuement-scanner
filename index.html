@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Medical Details and Documentation</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <link rel="stylesheet" href="css/styles.css">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
 </head>
@@ -12,7 +13,7 @@
     <div id="login-screen" class="login-screen">
         <div class="login-container">
             <div class="login-header">
-                <span class="login-logo">📄</span>
+                <span class="material-symbols-outlined login-logo">description</span>
                 <h1>My Medical Details</h1>
                 <p>Web-Based Medical details and Document Management System</p>
             </div>
@@ -41,7 +42,7 @@
     <div id="register-screen" class="login-screen hidden">
         <div class="login-container">
             <div class="login-header">
-                <span class="login-logo">📄</span>
+                <span class="material-symbols-outlined login-logo">description</span>
                 <h1>My Medical Details</h1>
                 <p>Create Your Account</p>
             </div>
@@ -74,35 +75,35 @@
         <!-- Navigation -->
         <nav class="navbar">
             <div class="nav-brand">
-                <span class="logo">📄</span>
+                <span class="material-symbols-outlined logo">description</span>
                 <span class="brand-name">My Medical Details</span>
             </div>
             <div class="nav-links">
                 <button class="nav-btn active" data-view="medications">
-                    <span class="nav-icon">💊</span>
+                    <span class="material-symbols-outlined nav-icon">medication</span>
                     <span class="nav-text">My Medication List</span>
                 </button>
                 <button class="nav-btn" data-view="appointments">
-                    <span class="nav-icon">📅</span>
+                    <span class="material-symbols-outlined nav-icon">calendar_month</span>
                     <span class="nav-text">Appointments</span>
                 </button>
                 <button class="nav-btn" data-view="documents">
-                    <span class="nav-icon">📁</span>
+                    <span class="material-symbols-outlined nav-icon">folder</span>
                     <span class="nav-text">My Documents</span>
                 </button>
                 <button class="nav-btn" data-view="scan">
-                    <span class="nav-icon">📷</span>
+                    <span class="material-symbols-outlined nav-icon">photo_camera</span>
                     <span class="nav-text">Add Documents</span>
                 </button>
                 <button class="nav-btn hidden" id="user-management-nav-btn" data-view="users">
-                    <span class="nav-icon">👥</span>
+                    <span class="material-symbols-outlined nav-icon">group</span>
                     <span class="nav-text">User Management</span>
                 </button>
             </div>
             <div class="nav-user">
                 <span class="user-greeting" id="user-greeting">Welcome, <span id="current-username">User</span></span>
                 <button class="btn btn-secondary btn-sm" id="logout-btn">
-                    <span class="nav-icon">🚪</span>
+                    <span class="material-symbols-outlined nav-icon">logout</span>
                     <span class="nav-text">Log Out</span>
                 </button>
             </div>
@@ -119,14 +120,14 @@
             
             <div class="scan-options">
                 <div class="option-card" id="camera-option">
-                    <div class="option-icon">📷</div>
+                    <div class="material-symbols-outlined option-icon">photo_camera</div>
                     <h3>Use Camera</h3>
                     <p>Scan document using your device camera</p>
                     <button class="btn btn-primary" id="start-camera-btn">Start Camera</button>
                 </div>
                 
                 <div class="option-card" id="upload-option">
-                    <div class="option-icon">📤</div>
+                    <div class="material-symbols-outlined option-icon">upload</div>
                     <h3>Upload File</h3>
                     <p>Upload an existing image file</p>
                     <input type="file" id="file-input" accept="image/*,.pdf" hidden>
@@ -134,7 +135,7 @@
                 </div>
 
                 <div class="option-card" id="text-page-option">
-                    <div class="option-icon">📝</div>
+                    <div class="material-symbols-outlined option-icon">edit_note</div>
                     <h3>Create Text Page</h3>
                     <p>Create a new text document manually</p>
                     <button class="btn btn-primary" id="create-text-btn">Create Text Page</button>
@@ -145,7 +146,7 @@
             <div id="camera-container" class="camera-container hidden">
                 <div class="camera-header">
                     <h3>Camera Preview</h3>
-                    <button class="btn-icon" id="close-camera-btn" title="Close Camera">✕</button>
+                    <button class="btn-icon" id="close-camera-btn" title="Close Camera"><span class="material-symbols-outlined">close</span></button>
                 </div>
                 <div class="video-wrapper">
                     <video id="camera-video" autoplay playsinline></video>
@@ -153,7 +154,7 @@
                 </div>
                 <div class="camera-controls">
                     <button class="btn btn-primary btn-lg" id="capture-btn">
-                        <span class="capture-icon">📸</span> Capture
+                        <span class="material-symbols-outlined capture-icon">photo_camera</span> Capture
                     </button>
                 </div>
             </div>
@@ -162,7 +163,7 @@
             <div id="preview-container" class="preview-container hidden">
                 <div class="preview-header">
                     <h3>Document Preview</h3>
-                    <button class="btn-icon" id="close-preview-btn" title="Cancel">✕</button>
+                    <button class="btn-icon" id="close-preview-btn" title="Cancel"><span class="material-symbols-outlined">close</span></button>
                 </div>
                 <div class="preview-image-wrapper">
                     <img id="preview-image" src="" alt="Document Preview">
@@ -186,7 +187,7 @@
             <div id="text-editor-container" class="text-editor-container hidden">
                 <div class="text-editor-header">
                     <h3>Create Text Page</h3>
-                    <button class="btn-icon" id="close-text-editor-btn" title="Cancel">✕</button>
+                    <button class="btn-icon" id="close-text-editor-btn" title="Cancel"><span class="material-symbols-outlined">close</span></button>
                 </div>
                 <div class="text-editor-form">
                     <div class="form-group">
@@ -216,7 +217,7 @@
             
             <div class="documents-toolbar">
                 <div class="search-box">
-                    <span class="search-icon">🔍</span>
+                    <span class="material-symbols-outlined search-icon">search</span>
                     <input type="text" id="search-input" placeholder="Search documents..." class="search-input">
                 </div>
                 <div class="filter-options">
@@ -234,7 +235,7 @@
             </div>
 
             <div id="no-documents" class="no-documents hidden">
-                <div class="empty-icon">📄</div>
+                <div class="material-symbols-outlined empty-icon">description</div>
                 <h3>No Documents Yet</h3>
                 <p>Start by scanning or uploading your first document</p>
                 <button class="btn btn-primary" id="go-scan-btn">Scan Document</button>
@@ -255,14 +256,14 @@
                     <button class="view-toggle-btn" data-calendar-view="day">Day</button>
                 </div>
                 <button class="btn btn-primary" id="add-appointment-btn">
-                    <span class="nav-icon">➕</span> Add Appointment
+                    <span class="material-symbols-outlined nav-icon">add</span> Add Appointment
                 </button>
             </div>
 
             <div class="calendar-navigation">
-                <button class="btn btn-secondary btn-sm" id="prev-period-btn">‹ Previous</button>
+                <button class="btn btn-secondary btn-sm" id="prev-period-btn"><span class="material-symbols-outlined">chevron_left</span> Previous</button>
                 <h2 id="current-period" class="current-period">December 2025</h2>
-                <button class="btn btn-secondary btn-sm" id="next-period-btn">Next ›</button>
+                <button class="btn btn-secondary btn-sm" id="next-period-btn">Next <span class="material-symbols-outlined">chevron_right</span></button>
                 <button class="btn btn-secondary btn-sm" id="today-btn">Today</button>
             </div>
 
@@ -304,7 +305,7 @@
                     <!-- Appointments will be dynamically inserted here -->
                 </div>
                 <div id="no-appointments" class="no-documents hidden">
-                    <div class="empty-icon">📅</div>
+                    <div class="material-symbols-outlined empty-icon">calendar_month</div>
                     <h3>No Appointments Yet</h3>
                     <p>Start by adding your first appointment</p>
                     <button class="btn btn-primary" id="add-appointment-btn-2">Add Appointment</button>
@@ -321,11 +322,11 @@
             
             <div class="medications-toolbar">
                 <div class="search-box">
-                    <span class="search-icon">🔍</span>
+                    <span class="material-symbols-outlined search-icon">search</span>
                     <input type="text" id="medication-search-input" placeholder="Search medications..." class="search-input">
                 </div>
                 <button class="btn btn-primary" id="add-medication-btn">
-                    <span class="nav-icon">➕</span> Add Medication
+                    <span class="material-symbols-outlined nav-icon">add</span> Add Medication
                 </button>
             </div>
 
@@ -334,7 +335,7 @@
             </div>
 
             <div id="no-medications" class="no-documents hidden">
-                <div class="empty-icon">💊</div>
+                <div class="material-symbols-outlined empty-icon">medication</div>
                 <h3>No Medications Yet</h3>
                 <p>Start by adding your first medication</p>
                 <button class="btn btn-primary" id="add-medication-btn-2">Add Medication</button>
@@ -355,7 +356,7 @@
             </div>
 
             <div id="no-users" class="no-documents hidden">
-                <div class="empty-icon">👥</div>
+                <div class="material-symbols-outlined empty-icon">group</div>
                 <h3>No Other Users</h3>
                 <p>You are currently the only user in the system</p>
             </div>
@@ -366,7 +367,7 @@
             <div class="modal-content appointment-modal-content">
                 <div class="modal-header">
                     <h2 id="appointment-modal-title">Add Appointment</h2>
-                    <button class="btn-icon modal-close" id="close-appointment-modal-btn" title="Close">✕</button>
+                    <button class="btn-icon modal-close" id="close-appointment-modal-btn" title="Close"><span class="material-symbols-outlined">close</span></button>
                 </div>
                 <form id="appointment-form" class="appointment-form">
                     <div class="modal-body">
@@ -429,7 +430,7 @@
             <div class="modal-content medication-modal-content">
                 <div class="modal-header">
                     <h2 id="medication-modal-title">Add Medication</h2>
-                    <button class="btn-icon modal-close" id="close-medication-modal-btn" title="Close">✕</button>
+                    <button class="btn-icon modal-close" id="close-medication-modal-btn" title="Close"><span class="material-symbols-outlined">close</span></button>
                 </div>
                 <form id="medication-form" class="medication-form">
                     <div class="modal-body">
@@ -471,7 +472,7 @@
             <div class="modal-content viewer-modal-content">
                 <div class="modal-header">
                     <h2 id="viewer-title">Document Viewer</h2>
-                    <button class="btn-icon modal-close" id="close-viewer-btn" title="Close">✕</button>
+                    <button class="btn-icon modal-close" id="close-viewer-btn" title="Close"><span class="material-symbols-outlined">close</span></button>
                 </div>
                 <div class="viewer-tabs">
                     <button class="tab-btn active" data-tab="image">Document</button>
@@ -489,9 +490,9 @@
                     <div id="text-tab" class="tab-content">
                         <div class="text-viewer">
                             <div class="text-toolbar">
-                                <button class="btn btn-sm" id="edit-text-btn" title="Edit Text">✏️ Edit</button>
-                                <button class="btn btn-sm" id="copy-text-btn" title="Copy to Clipboard">📋 Copy</button>
-                                <button class="btn btn-sm" id="download-text-btn" title="Download Text">⬇️ Download</button>
+                                <button class="btn btn-sm" id="edit-text-btn" title="Edit Text"><span class="material-symbols-outlined">edit</span> Edit</button>
+                                <button class="btn btn-sm" id="copy-text-btn" title="Copy to Clipboard"><span class="material-symbols-outlined">content_copy</span> Copy</button>
+                                <button class="btn btn-sm" id="download-text-btn" title="Download Text"><span class="material-symbols-outlined">download</span> Download</button>
                             </div>
                             <div id="text-content" class="text-content" contenteditable="false"></div>
                         </div>
@@ -509,9 +510,9 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-danger" id="delete-doc-btn">🗑️ Delete Document</button>
-                    <button class="btn btn-secondary" id="reprocess-btn">🔄 Re-process OCR</button>
-                    <button class="btn btn-primary" id="save-text-btn" disabled>💾 Save Changes</button>
+                    <button class="btn btn-danger" id="delete-doc-btn"><span class="material-symbols-outlined">delete</span> Delete Document</button>
+                    <button class="btn btn-secondary" id="reprocess-btn"><span class="material-symbols-outlined">refresh</span> Re-process OCR</button>
+                    <button class="btn btn-primary" id="save-text-btn" disabled><span class="material-symbols-outlined">save</span> Save Changes</button>
                 </div>
             </div>
         </div>
@@ -531,7 +532,7 @@
         <!-- Confirmation Modal -->
         <div id="confirm-modal" class="modal hidden">
             <div class="modal-content confirm-modal-content">
-                <div class="confirm-icon">⚠️</div>
+                <div class="material-symbols-outlined confirm-icon">warning</div>
                 <h3 id="confirm-title">Confirm Action</h3>
                 <p id="confirm-message">Are you sure you want to proceed?</p>
                 <div class="confirm-actions">
