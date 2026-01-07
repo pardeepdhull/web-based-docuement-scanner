@@ -7,6 +7,14 @@ const MyMedicalDetailsApp = (function() {
     // Constants
     const IMAGE_QUALITY = 0.95; // JPEG quality for captured/processed images
     
+    // OCR Preprocessing Constants
+    const OCR_MAX_DIMENSION = 3000; // Maximum dimension for OCR image
+    const OCR_MIN_DIMENSION = 2000; // Minimum dimension for OCR image
+    const CLAHE_TILE_SIZE = 8; // Tile size for CLAHE (Contrast Limited Adaptive Histogram Equalization)
+    const CLAHE_CLIP_LIMIT = 3.0; // Clip limit for CLAHE to prevent over-amplification
+    const MEDIAN_FILTER_RADIUS = 1; // Radius for median filter (1 = 3x3 filter)
+    const BINARIZATION_THRESHOLD_ADJUSTMENT = -15; // Adjustment to Otsu threshold for binarization
+    
     // State
     let currentView = 'scan';
     let currentDocumentId = null;
@@ -898,8 +906,8 @@ const MyMedicalDetailsApp = (function() {
                     const ctx = canvas.getContext('2d');
                     
                     // Calculate optimal dimensions (target ~2000-3000px on longer side for better OCR quality)
-                    const maxDimension = 3000;
-                    const minDimension = 2000;
+                    const maxDimension = OCR_MAX_DIMENSION;
+                    const minDimension = OCR_MIN_DIMENSION;
                     let width = img.width;
                     let height = img.height;
                     
@@ -953,7 +961,7 @@ const MyMedicalDetailsApp = (function() {
                     
                     // Step 5: Apply adaptive binarization with slight bias for darker text
                     // Reduce threshold slightly to catch lighter text
-                    const adjustedThreshold = Math.max(0, threshold - 15);
+                    const adjustedThreshold = Math.max(0, threshold + BINARIZATION_THRESHOLD_ADJUSTMENT);
                     for (let i = 0; i < data.length; i += 4) {
                         const value = data[i];
                         // Apply adjusted threshold for binarization
@@ -985,8 +993,8 @@ const MyMedicalDetailsApp = (function() {
      * @param {number} height - Image height
      */
     function applyCLAHE(data, width, height) {
-        const tileSize = 8; // Tile size for adaptive histogram equalization
-        const clipLimit = 3.0; // Clip limit to prevent over-amplification
+        const tileSize = CLAHE_TILE_SIZE; // Tile size for adaptive histogram equalization
+        const clipLimit = CLAHE_CLIP_LIMIT; // Clip limit to prevent over-amplification
         
         const tilesX = Math.ceil(width / tileSize);
         const tilesY = Math.ceil(height / tileSize);
@@ -1060,7 +1068,7 @@ const MyMedicalDetailsApp = (function() {
      * @param {number} height - Image height
      */
     function applyMedianFilter(data, width, height) {
-        const radius = 1; // 3x3 filter
+        const radius = MEDIAN_FILTER_RADIUS; // Radius for median filter (1 = 3x3 filter)
         const tempData = new Uint8ClampedArray(data);
         
         for (let y = radius; y < height - radius; y++) {
