@@ -917,8 +917,8 @@ const MyMedicalDetailsApp = (function() {
                     ctx.drawImage(img, 0, 0, width, height);
                     
                     // Get image data for processing
-                    const imageData = ctx.getImageData(0, 0, width, height);
-                    const data = imageData.data;
+                    const imgData = ctx.getImageData(0, 0, width, height);
+                    const data = imgData.data;
                     
                     // Step 1: Convert to grayscale and enhance contrast
                     for (let i = 0; i < data.length; i += 4) {
@@ -938,10 +938,10 @@ const MyMedicalDetailsApp = (function() {
                     // Find Otsu's threshold for binarization
                     const threshold = calculateOtsuThreshold(histogram, width * height);
                     
-                    // Step 3: Apply adaptive binarization with contrast enhancement
+                    // Step 3: Apply adaptive binarization
                     for (let i = 0; i < data.length; i += 4) {
                         const value = data[i];
-                        // Apply threshold with slight smoothing to reduce noise
+                        // Apply Otsu's threshold for binarization
                         const binarized = value > threshold ? 255 : 0;
                         data[i] = binarized;
                         data[i + 1] = binarized;
@@ -949,7 +949,7 @@ const MyMedicalDetailsApp = (function() {
                     }
                     
                     // Put processed image data back
-                    ctx.putImageData(imageData, 0, 0);
+                    ctx.putImageData(imgData, 0, 0);
                     
                     // Convert to high-quality JPEG for OCR
                     resolve(canvas.toDataURL('image/jpeg', 0.95));
