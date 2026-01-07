@@ -4,6 +4,9 @@
  */
 
 const MyMedicalDetailsApp = (function() {
+    // Constants
+    const IMAGE_QUALITY = 0.95; // JPEG quality for captured/processed images
+    
     // State
     let currentView = 'scan';
     let currentDocumentId = null;
@@ -607,8 +610,8 @@ const MyMedicalDetailsApp = (function() {
             const constraints = {
                 video: {
                     facingMode: { ideal: 'environment' },
-                    width: { ideal: 1920 },
-                    height: { ideal: 1080 }
+                    width: { ideal: 3840 }, // Request 4K for maximum quality
+                    height: { ideal: 2160 }
                 }
             };
             
@@ -648,7 +651,8 @@ const MyMedicalDetailsApp = (function() {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0);
         
-        const imageData = canvas.toDataURL('image/jpeg', 0.9);
+        // Use higher quality JPEG for better OCR results
+        const imageData = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
         showPreview(imageData);
         stopCamera();
     }
@@ -710,7 +714,7 @@ const MyMedicalDetailsApp = (function() {
             viewport: viewport
         }).promise;
         
-        return canvas.toDataURL('image/jpeg', 0.9);
+        return canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
     }
 
     /**
@@ -881,6 +885,125 @@ const MyMedicalDetailsApp = (function() {
     }
 
     /**
+     * Preprocess image for optimal OCR
+     * @param {string} imageData - Base64 image data
+     * @returns {Promise<string>} - Preprocessed base64 image data
+     */
+    async function preprocessImageForOCR(imageData) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Calculate optimal dimensions (target ~1600-2000px on longer side for balance of quality and speed)
+                    const maxDimension = 2000;
+                    const minDimension = 1600;
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    // Only resize if image is too large or too small
+                    const longerSide = Math.max(width, height);
+                    if (longerSide > maxDimension || longerSide < minDimension) {
+                        const scale = longerSide > maxDimension 
+                            ? maxDimension / longerSide 
+                            : minDimension / longerSide;
+                        width = Math.round(width * scale);
+                        height = Math.round(height * scale);
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    // Draw image at optimal size
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // Get image data for processing
+                    const imgData = ctx.getImageData(0, 0, width, height);
+                    const data = imgData.data;
+                    
+                    // Step 1: Convert to grayscale and build histogram in single pass
+                    const histogram = new Array(256).fill(0);
+                    for (let i = 0; i < data.length; i += 4) {
+                        // Grayscale conversion using optimized integer arithmetic
+                        // Equivalent to: 0.299*R + 0.587*G + 0.114*B
+                        const gray = (77 * data[i] + 151 * data[i + 1] + 28 * data[i + 2]) >> 8;
+                        data[i] = gray;
+                        data[i + 1] = gray;
+                        data[i + 2] = gray;
+                        histogram[gray]++;
+                    }
+                    
+                    // Step 2: Find Otsu's threshold for binarization
+                    const threshold = calculateOtsuThreshold(histogram, width * height);
+                    
+                    // Step 3: Apply adaptive binarization
+                    for (let i = 0; i < data.length; i += 4) {
+                        const value = data[i];
+                        // Apply Otsu's threshold for binarization
+                        const binarized = value > threshold ? 255 : 0;
+                        data[i] = binarized;
+                        data[i + 1] = binarized;
+                        data[i + 2] = binarized;
+                    }
+                    
+                    // Put processed image data back
+                    ctx.putImageData(imgData, 0, 0);
+                    
+                    // Convert to high-quality JPEG for OCR
+                    resolve(canvas.toDataURL('image/jpeg', IMAGE_QUALITY));
+                } catch (error) {
+                    reject(error);
+                }
+            };
+            img.onerror = reject;
+            img.src = imageData;
+        });
+    }
+
+    /**
+     * Calculate Otsu's threshold for image binarization
+     * @param {Array<number>} histogram - Pixel intensity histogram
+     * @param {number} totalPixels - Total number of pixels
+     * @returns {number} - Optimal threshold value
+     */
+    function calculateOtsuThreshold(histogram, totalPixels) {
+        let sum = 0;
+        for (let i = 0; i < 256; i++) {
+            sum += i * histogram[i];
+        }
+        
+        let sumB = 0;
+        let wB = 0;
+        let wF = 0;
+        let maxVariance = 0;
+        let threshold = 0;
+        
+        for (let i = 0; i < 256; i++) {
+            wB += histogram[i];
+            if (wB === 0) continue;
+            
+            wF = totalPixels - wB;
+            if (wF === 0) break;
+            
+            sumB += i * histogram[i];
+            
+            const mB = sumB / wB;
+            const mF = (sum - sumB) / wF;
+            
+            const variance = wB * wF * (mB - mF) * (mB - mF);
+            
+            if (variance > maxVariance) {
+                maxVariance = variance;
+                threshold = i;
+            }
+        }
+        
+        return threshold;
+    }
+
+    /**
      * Perform OCR on image
      * @param {string} imageData - Base64 image data
      * @returns {Promise<string>} - Extracted text
@@ -889,21 +1012,32 @@ const MyMedicalDetailsApp = (function() {
         updateProgress(0, 'Initializing OCR engine...');
         
         try {
+            // Preprocess image for better OCR accuracy
+            updateProgress(10, 'Preprocessing image...');
+            const preprocessedImage = await preprocessImageForOCR(imageData);
+            
+            updateProgress(20, 'Starting OCR engine...');
             const worker = await Tesseract.createWorker('eng', 1, {
                 workerPath: 'vendor/tesseract.js/worker.min.js',
                 langPath: 'vendor/tessdata',
                 corePath: 'vendor',
                 logger: (m) => {
                     if (m.status === 'recognizing text') {
-                        const progress = Math.round(m.progress * 100);
-                        updateProgress(progress, `Recognizing text... ${progress}%`);
+                        const progress = 20 + Math.round(m.progress * 75);
+                        updateProgress(progress, `Recognizing text... ${Math.round(m.progress * 100)}%`);
                     } else {
-                        updateProgress(m.progress * 50, m.status);
+                        updateProgress(20 + m.progress * 15, m.status);
                     }
                 }
             });
             
-            const { data: { text } } = await worker.recognize(imageData);
+            // Configure Tesseract with optimal settings for document scanning
+            // PSM 3 = Fully automatic page segmentation (default, good for documents)
+            await worker.setParameters({
+                tessedit_pageseg_mode: '3',
+            });
+            
+            const { data: { text } } = await worker.recognize(preprocessedImage);
             await worker.terminate();
             
             updateProgress(100, 'Complete!');
