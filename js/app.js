@@ -4,6 +4,9 @@
  */
 
 const MyMedicalDetailsApp = (function() {
+    // Constants
+    const IMAGE_QUALITY = 0.95; // JPEG quality for captured/processed images
+    
     // State
     let currentView = 'scan';
     let currentDocumentId = null;
@@ -649,7 +652,7 @@ const MyMedicalDetailsApp = (function() {
         ctx.drawImage(video, 0, 0);
         
         // Use higher quality JPEG for better OCR results
-        const imageData = canvas.toDataURL('image/jpeg', 0.95);
+        const imageData = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
         showPreview(imageData);
         stopCamera();
     }
@@ -711,7 +714,7 @@ const MyMedicalDetailsApp = (function() {
             viewport: viewport
         }).promise;
         
-        return canvas.toDataURL('image/jpeg', 0.9);
+        return canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
     }
 
     /**
@@ -920,22 +923,19 @@ const MyMedicalDetailsApp = (function() {
                     const imgData = ctx.getImageData(0, 0, width, height);
                     const data = imgData.data;
                     
-                    // Step 1: Convert to grayscale and enhance contrast
+                    // Step 1: Convert to grayscale and build histogram in single pass
+                    const histogram = new Array(256).fill(0);
                     for (let i = 0; i < data.length; i += 4) {
-                        // Grayscale conversion using luminance formula
-                        const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                        // Grayscale conversion using optimized integer arithmetic
+                        // Equivalent to: 0.299*R + 0.587*G + 0.114*B
+                        const gray = (77 * data[i] + 151 * data[i + 1] + 28 * data[i + 2]) >> 8;
                         data[i] = gray;
                         data[i + 1] = gray;
                         data[i + 2] = gray;
+                        histogram[gray]++;
                     }
                     
-                    // Step 2: Calculate histogram for adaptive thresholding
-                    const histogram = new Array(256).fill(0);
-                    for (let i = 0; i < data.length; i += 4) {
-                        histogram[data[i]]++;
-                    }
-                    
-                    // Find Otsu's threshold for binarization
+                    // Step 2: Find Otsu's threshold for binarization
                     const threshold = calculateOtsuThreshold(histogram, width * height);
                     
                     // Step 3: Apply adaptive binarization
@@ -952,7 +952,7 @@ const MyMedicalDetailsApp = (function() {
                     ctx.putImageData(imgData, 0, 0);
                     
                     // Convert to high-quality JPEG for OCR
-                    resolve(canvas.toDataURL('image/jpeg', 0.95));
+                    resolve(canvas.toDataURL('image/jpeg', IMAGE_QUALITY));
                 } catch (error) {
                     reject(error);
                 }
