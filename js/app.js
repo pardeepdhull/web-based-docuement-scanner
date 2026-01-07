@@ -1033,10 +1033,8 @@ const MyMedicalDetailsApp = (function() {
             
             // Configure Tesseract with optimal settings for document scanning
             // PSM 3 = Fully automatic page segmentation (default, good for documents)
-            // OEM 1 = LSTM neural network only (best accuracy for modern documents)
             await worker.setParameters({
                 tessedit_pageseg_mode: '3',
-                tessedit_ocr_engine_mode: '1',
             });
             
             const { data: { text } } = await worker.recognize(preprocessedImage);
