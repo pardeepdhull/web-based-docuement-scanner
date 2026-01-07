@@ -897,9 +897,9 @@ const MyMedicalDetailsApp = (function() {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
                     
-                    // Calculate optimal dimensions (target ~1600-2000px on longer side for balance of quality and speed)
-                    const maxDimension = 2000;
-                    const minDimension = 1600;
+                    // Calculate optimal dimensions (target ~2000-3000px on longer side for better OCR quality)
+                    const maxDimension = 3000;
+                    const minDimension = 2000;
                     let width = img.width;
                     let height = img.height;
                     
@@ -916,14 +916,16 @@ const MyMedicalDetailsApp = (function() {
                     canvas.width = width;
                     canvas.height = height;
                     
-                    // Draw image at optimal size
+                    // Draw image at optimal size with higher quality
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
                     ctx.drawImage(img, 0, 0, width, height);
                     
                     // Get image data for processing
                     const imgData = ctx.getImageData(0, 0, width, height);
                     const data = imgData.data;
                     
-                    // Step 1: Convert to grayscale and build histogram in single pass
+                    // Step 1: Convert to grayscale and build histogram
                     const histogram = new Array(256).fill(0);
                     for (let i = 0; i < data.length; i += 4) {
                         // Grayscale conversion using optimized integer arithmetic
@@ -935,14 +937,27 @@ const MyMedicalDetailsApp = (function() {
                         histogram[gray]++;
                     }
                     
-                    // Step 2: Find Otsu's threshold for binarization
-                    const threshold = calculateOtsuThreshold(histogram, width * height);
+                    // Step 2: Apply Contrast Limited Adaptive Histogram Equalization (CLAHE)
+                    applyCLAHE(data, width, height);
                     
-                    // Step 3: Apply adaptive binarization
+                    // Step 3: Apply noise reduction (median filter for salt-and-pepper noise)
+                    applyMedianFilter(data, width, height);
+                    
+                    // Step 4: Find Otsu's threshold for binarization
+                    // Rebuild histogram after CLAHE and noise reduction
+                    const newHistogram = new Array(256).fill(0);
+                    for (let i = 0; i < data.length; i += 4) {
+                        newHistogram[data[i]]++;
+                    }
+                    const threshold = calculateOtsuThreshold(newHistogram, width * height);
+                    
+                    // Step 5: Apply adaptive binarization with slight bias for darker text
+                    // Reduce threshold slightly to catch lighter text
+                    const adjustedThreshold = Math.max(0, threshold - 15);
                     for (let i = 0; i < data.length; i += 4) {
                         const value = data[i];
-                        // Apply Otsu's threshold for binarization
-                        const binarized = value > threshold ? 255 : 0;
+                        // Apply adjusted threshold for binarization
+                        const binarized = value > adjustedThreshold ? 255 : 0;
                         data[i] = binarized;
                         data[i + 1] = binarized;
                         data[i + 2] = binarized;
@@ -951,8 +966,8 @@ const MyMedicalDetailsApp = (function() {
                     // Put processed image data back
                     ctx.putImageData(imgData, 0, 0);
                     
-                    // Convert to high-quality JPEG for OCR
-                    resolve(canvas.toDataURL('image/jpeg', IMAGE_QUALITY));
+                    // Convert to high-quality PNG for OCR (better for black and white images)
+                    resolve(canvas.toDataURL('image/png'));
                 } catch (error) {
                     reject(error);
                 }
@@ -960,6 +975,116 @@ const MyMedicalDetailsApp = (function() {
             img.onerror = reject;
             img.src = imageData;
         });
+    }
+    
+    /**
+     * Apply Contrast Limited Adaptive Histogram Equalization (CLAHE)
+     * Improves local contrast in the image
+     * @param {Uint8ClampedArray} data - Image pixel data
+     * @param {number} width - Image width
+     * @param {number} height - Image height
+     */
+    function applyCLAHE(data, width, height) {
+        const tileSize = 8; // Tile size for adaptive histogram equalization
+        const clipLimit = 3.0; // Clip limit to prevent over-amplification
+        
+        const tilesX = Math.ceil(width / tileSize);
+        const tilesY = Math.ceil(height / tileSize);
+        
+        // Process each tile
+        for (let ty = 0; ty < tilesY; ty++) {
+            for (let tx = 0; tx < tilesX; tx++) {
+                const x0 = tx * tileSize;
+                const y0 = ty * tileSize;
+                const x1 = Math.min(x0 + tileSize, width);
+                const y1 = Math.min(y0 + tileSize, height);
+                
+                // Build histogram for this tile
+                const hist = new Array(256).fill(0);
+                for (let y = y0; y < y1; y++) {
+                    for (let x = x0; x < x1; x++) {
+                        const idx = (y * width + x) * 4;
+                        hist[data[idx]]++;
+                    }
+                }
+                
+                // Apply clip limit
+                const totalPixels = (x1 - x0) * (y1 - y0);
+                const clipValue = (clipLimit * totalPixels) / 256;
+                let clippedSum = 0;
+                for (let i = 0; i < 256; i++) {
+                    if (hist[i] > clipValue) {
+                        clippedSum += hist[i] - clipValue;
+                        hist[i] = clipValue;
+                    }
+                }
+                
+                // Redistribute clipped pixels
+                const redistribute = clippedSum / 256;
+                for (let i = 0; i < 256; i++) {
+                    hist[i] += redistribute;
+                }
+                
+                // Create cumulative distribution function
+                const cdf = new Array(256);
+                cdf[0] = hist[0];
+                for (let i = 1; i < 256; i++) {
+                    cdf[i] = cdf[i - 1] + hist[i];
+                }
+                
+                // Normalize CDF
+                const cdfMin = cdf.find(v => v > 0) || 0;
+                for (let i = 0; i < 256; i++) {
+                    cdf[i] = Math.round(((cdf[i] - cdfMin) / (totalPixels - cdfMin)) * 255);
+                }
+                
+                // Apply equalization to tile
+                for (let y = y0; y < y1; y++) {
+                    for (let x = x0; x < x1; x++) {
+                        const idx = (y * width + x) * 4;
+                        const value = data[idx];
+                        const newValue = cdf[value] || value;
+                        data[idx] = newValue;
+                        data[idx + 1] = newValue;
+                        data[idx + 2] = newValue;
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Apply median filter for noise reduction
+     * @param {Uint8ClampedArray} data - Image pixel data
+     * @param {number} width - Image width
+     * @param {number} height - Image height
+     */
+    function applyMedianFilter(data, width, height) {
+        const radius = 1; // 3x3 filter
+        const tempData = new Uint8ClampedArray(data);
+        
+        for (let y = radius; y < height - radius; y++) {
+            for (let x = radius; x < width - radius; x++) {
+                const values = [];
+                
+                // Collect neighboring pixel values
+                for (let dy = -radius; dy <= radius; dy++) {
+                    for (let dx = -radius; dx <= radius; dx++) {
+                        const idx = ((y + dy) * width + (x + dx)) * 4;
+                        values.push(tempData[idx]);
+                    }
+                }
+                
+                // Sort and pick median
+                values.sort((a, b) => a - b);
+                const median = values[Math.floor(values.length / 2)];
+                
+                const idx = (y * width + x) * 4;
+                data[idx] = median;
+                data[idx + 1] = median;
+                data[idx + 2] = median;
+            }
+        }
     }
 
     /**
@@ -1032,20 +1157,58 @@ const MyMedicalDetailsApp = (function() {
             });
             
             // Configure Tesseract with optimal settings for document scanning
-            // PSM 3 = Fully automatic page segmentation (default, good for documents)
+            // PSM 3 = Fully automatic page segmentation, but no OSD (Orientation and Script Detection)
+            // PSM 6 = Assume a single uniform block of text (better for dense documents like leaflets)
+            // OEM 1 = LSTM neural network mode only (better accuracy for modern text)
             await worker.setParameters({
-                tessedit_pageseg_mode: '3',
+                tessedit_pageseg_mode: '3', // Fully automatic page segmentation
+                tessedit_ocr_engine_mode: '1', // Use LSTM neural network (OEM_LSTM_ONLY)
+                tessedit_char_whitelist: '', // Allow all characters
+                preserve_interword_spaces: '1', // Preserve spaces between words
+                // Improve word recognition
+                tessedit_enable_dict_correction: '1', // Use dictionary for spell correction
+                classify_bln_numeric_mode: '0', // Don't assume numeric-only mode
+                // Quality settings
+                textord_heavy_nr: '1' // Heavy noise reduction
             });
             
             const { data: { text } } = await worker.recognize(preprocessedImage);
             await worker.terminate();
             
             updateProgress(100, 'Complete!');
-            return text.trim();
+            
+            // Post-process the text to clean up common OCR errors
+            return cleanOCRText(text);
         } catch (error) {
             console.error('OCR error:', error);
             throw new Error('OCR processing failed');
         }
+    }
+    
+    /**
+     * Clean up common OCR errors in extracted text
+     * @param {string} text - Raw OCR text
+     * @returns {string} - Cleaned text
+     */
+    function cleanOCRText(text) {
+        if (!text) return '';
+        
+        // Remove excessive whitespace while preserving line breaks
+        let cleaned = text.replace(/ +/g, ' '); // Multiple spaces to single space
+        cleaned = cleaned.replace(/\n\n+/g, '\n\n'); // Multiple newlines to double newline
+        cleaned = cleaned.replace(/[ \t]+\n/g, '\n'); // Trailing spaces before newlines
+        cleaned = cleaned.replace(/\n[ \t]+/g, '\n'); // Leading spaces after newlines
+        
+        // Fix common OCR character substitutions
+        cleaned = cleaned.replace(/[`'']/g, "'"); // Various apostrophes to standard
+        cleaned = cleaned.replace(/[""]/g, '"'); // Various quotes to standard
+        cleaned = cleaned.replace(/—/g, '-'); // Em dash to hyphen
+        cleaned = cleaned.replace(/…/g, '...'); // Ellipsis to three dots
+        
+        // Remove obvious OCR artifacts (isolated special characters)
+        cleaned = cleaned.replace(/\n[^\w\s]{1,3}\n/g, '\n'); // Lines with only 1-3 special chars
+        
+        return cleaned.trim();
     }
 
     /**
