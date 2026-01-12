@@ -1028,37 +1028,44 @@ body {
     flex: 1;
     overflow: hidden;
     min-height: 400px;
+    max-height: calc(90vh - 200px); /* Constrain height to enable scrolling in child elements */
+    display: flex; /* Make viewer-content a flex container */
+    flex-direction: column; /* Stack tab content vertically */
 }
 
 .tab-content {
     display: none;
-    height: 100%;
+    flex: 1; /* Take available space */
+    min-height: 0; /* Allow flex item to shrink below content size */
 }
 
 .tab-content.active {
-    display: block;
+    display: flex; /* Use flex to properly constrain children */
+    flex-direction: column; /* Stack children vertically */
 }
 
 .image-viewer {
-    height: 100%;
-    overflow: auto;
+    flex: 1;
+    overflow: auto; /* Enable scrolling for images that exceed container */
     padding: 1rem;
     display: flex;
     align-items: flex-start;
     justify-content: flex-start;
     background: var(--background-color);
+    min-height: 0; /* Allow flex item to shrink */
 }
 
 #viewer-image {
-    max-width: 100%;
-    max-height: 100%;
+    max-width: none; /* Allow image to exceed container width */
+    height: auto;
     object-fit: contain;
 }
 
 .text-viewer {
-    height: 100%;
+    flex: 1;
     display: flex;
     flex-direction: column;
+    min-height: 0; /* Allow flex item to shrink */
 }
 
 .text-toolbar {
@@ -1067,18 +1074,21 @@ body {
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--border-color);
     flex-wrap: wrap;
+    flex-shrink: 0; /* Prevent toolbar from shrinking */
 }
 
 .text-content {
     flex: 1;
     padding: 1rem;
-    overflow: auto;
+    overflow-y: auto; /* Always show vertical scrollbar when content exceeds container */
+    overflow-x: auto; /* Enable horizontal scrolling if needed */
     font-family: 'Courier New', Courier, monospace;
     font-size: 0.9rem;
     line-height: 1.8;
     white-space: pre-wrap;
     word-break: break-word;
     background: var(--background-color);
+    min-height: 0; /* Required for flex children to properly scroll */
 }
 
 .text-content[contenteditable="true"] {
@@ -1089,12 +1099,15 @@ body {
 /* Split View */
 .split-viewer {
     display: flex;
-    height: 100%;
+    flex: 1;
+    min-height: 0; /* Allow flex item to shrink */
 }
 
 .split-pane {
     flex: 1;
-    overflow: auto;
+    overflow: auto; /* Enable scrolling for both panes */
+    min-width: 0; /* Allow flex items to shrink below content size */
+    min-height: 0; /* Allow flex items to shrink below content size */
 }
 
 .image-pane {
@@ -1107,18 +1120,25 @@ body {
 }
 
 #split-image {
-    max-width: 100%;
-    max-height: 100%;
+    max-width: none; /* Allow image to exceed container width for scrolling */
+    height: auto;
     object-fit: contain;
 }
 
 .text-pane {
     background: var(--background-color);
+    padding: 1rem;
 }
 
 #split-text-content {
     height: 100%;
-    overflow: auto;
+    overflow-y: auto; /* Ensure vertical scrolling for long text */
+    overflow-x: auto;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9rem;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 /* Processing Modal */
@@ -1951,6 +1971,10 @@ body {
         width: 100%;
     }
 
+    .viewer-content {
+        max-height: calc(90vh - 250px); /* Adjust for mobile screen sizes */
+    }
+
     .split-viewer {
         flex-direction: column;
     }
@@ -1959,6 +1983,7 @@ body {
         border-right: none;
         border-bottom: 1px solid var(--border-color);
         max-height: 40vh;
+        overflow-y: auto; /* Ensure scrolling on mobile */
     }
 
     .modal-footer {
