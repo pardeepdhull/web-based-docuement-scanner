@@ -1080,7 +1080,7 @@ body {
 .text-content {
     flex: 1;
     padding: 1rem;
-    overflow-y: auto; /* Always show vertical scrollbar when content exceeds container */
+    overflow-y: auto; /* Show vertical scrollbar when content exceeds container */
     overflow-x: auto; /* Enable horizontal scrolling if needed */
     font-family: 'Courier New', Courier, monospace;
     font-size: 0.9rem;
@@ -1139,6 +1139,7 @@ body {
     line-height: 1.8;
     white-space: pre-wrap;
     word-break: break-word;
+    min-height: 0; /* Required for flex children to properly scroll */
 }
 
 /* Processing Modal */
