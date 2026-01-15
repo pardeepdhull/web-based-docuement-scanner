@@ -578,6 +578,29 @@
         z=e.getElementsByTagName(n)[0];z.parentNode.insertBefore(y,z);})(window,document,'script','pendo');
 
 })(‘XXXXXXXXXX’);
+        // in your authentication promise handler or callback
+
+    pendo.initialize({
+
+        visitor: {
+
+            id:              'OKTA-ID'    // * If Okta ID is unavailable, use another unique identifier that is NOT EMAIL
+
+                                                    // **See below for additional notes
+
+        },
+
+        account: {
+
+            id:           'SALESFORCE-CLIENT-ID',      // If unavailable, use another unique identifier 
+
+            name:         'Client Name'             // The client’s name 
+
+                                                    // ***See below for additional notes
+
+        }
+
+    });
 
 </script>
 </body>
